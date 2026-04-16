@@ -6,7 +6,6 @@ This folder is organized so a new engineer can move from product understanding t
 
 - [Project Architecture](project/architecture.md)
 - [Roadmap and Backlog](project/roadmap.md)
-- [ClickUp Update Package](project/clickup-update.md)
 - [GitHub Desktop and Repository Guide](project/github-desktop-guide.md)
 
 ## Operations
@@ -27,4 +26,4 @@ This folder is organized so a new engineer can move from product understanding t
 2. Read [Project Architecture](project/architecture.md)
 3. Read [Deployment Guide](operations/deployment.md)
 4. Review [Roadmap and Backlog](project/roadmap.md)
-5. Use [ClickUp Update Package](project/clickup-update.md) for delivery tracking
+5. Use [Roadmap and Backlog](project/roadmap.md) for delivery tracking and future planning

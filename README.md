@@ -32,7 +32,6 @@ The app is designed so stock analysis works even when portfolio connectivity is 
 - [Deployment Guide](docs/operations/deployment.md)
 - [GoDaddy Domain Setup](docs/operations/domain-setup-godaddy.md)
 - [Roadmap](docs/project/roadmap.md)
-- [ClickUp Update](docs/project/clickup-update.md)
 - [GitHub Desktop Guide](docs/project/github-desktop-guide.md)
 
 ## Repository Structure
