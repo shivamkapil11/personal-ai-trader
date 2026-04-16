@@ -73,6 +73,7 @@ Notes:
 - Use `SKIP_PIP_INSTALL=1` when the virtual environment is already prepared.
 - Set `APP_RELOAD=1` if you want `uvicorn --reload` locally.
 - The current launcher defaults to non-reload mode for better stability.
+- `.python-version` pins deploy/runtime targets to Python `3.12`.
 
 ## Environment Variables
 

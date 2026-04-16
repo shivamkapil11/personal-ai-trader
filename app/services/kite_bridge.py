@@ -11,6 +11,7 @@ from app.config import settings
 from app.services.app_state import app_state_store, utc_now
 
 LOGIN_REQUIRED_TEXT = "Please log in first using the login tool"
+PROFILE_FAILED_TEXT = "Failed to execute get_profile"
 LOGIN_URL_PATTERN = re.compile(r"\[Login to Kite\]\((https://[^)]+)\)")
 WARNING_PATTERN = re.compile(
     r"WARNING:.*?risk\.\*\*",
@@ -168,7 +169,8 @@ class KiteBridge:
             app_state_store.update_user_fields(user["uid"], kiteConnected=True, onboardingStep="dashboard")
             return refreshed
 
-        status = "auth_required" if LOGIN_REQUIRED_TEXT in profile_result.get("text", "") else "error"
+        profile_text = profile_result.get("text", "")
+        status = "auth_required" if (LOGIN_REQUIRED_TEXT in profile_text or PROFILE_FAILED_TEXT in profile_text) else "error"
         refreshed = app_state_store.upsert_kite_connection(
             user["uid"],
             mcpSessionId=connection["mcpSessionId"],
