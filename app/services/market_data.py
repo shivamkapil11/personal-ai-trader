@@ -2,15 +2,36 @@ from __future__ import annotations
 
 import math
 from datetime import datetime
+from functools import lru_cache
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 import yfinance as yf
 
+from app.config import settings
+
+try:
+    from jugaad_data.nse import NSELive
+except Exception:  # pragma: no cover - optional dependency at runtime
+    NSELive = None
+
 
 class MarketDataError(Exception):
     """Raised when ticker data cannot be resolved."""
+
+
+# Some NSE-facing names differ from Yahoo Finance's actual tradable symbol.
+# Keep the overrides small and explicit so the resolver remains predictable.
+YAHOO_SYMBOL_ALIASES = {
+    "NALCO": ("NATIONALUM.NS", "NATIONALUM.BO", "NATIONALUM"),
+}
+
+PROVIDER_LABELS = {
+    "kite_mcp": "Kite MCP",
+    "jugaad_data": "jugaad-data",
+    "yfinance": "Yahoo Finance",
+}
 
 
 def clean_number(value: Any, digits: int = 2) -> float | None:
@@ -107,18 +128,233 @@ def infer_tradingview_symbol(user_query: str, resolved_symbol: str, info: Dict[s
     return base
 
 
+def unique_ordered(values: Iterable[str]) -> List[str]:
+    seen: set[str] = set()
+    ordered: List[str] = []
+    for value in values:
+        cleaned = value.strip().upper()
+        if cleaned and cleaned not in seen:
+            seen.add(cleaned)
+            ordered.append(cleaned)
+    return ordered
+
+
+def alias_candidates(raw_symbol: str, exchange_prefix: str | None = None) -> List[str]:
+    alias_values = list(YAHOO_SYMBOL_ALIASES.get(raw_symbol, ()))
+    if not alias_values:
+        return []
+    if exchange_prefix == "NSE":
+        return [value for value in alias_values if value.endswith(".NS")] or alias_values
+    if exchange_prefix == "BSE":
+        return [value for value in alias_values if value.endswith(".BO")] or alias_values
+    return alias_values
+
+
+@lru_cache(maxsize=256)
+def has_nse_live_symbol(raw_symbol: str) -> bool:
+    if NSELive is None or not raw_symbol or "." in raw_symbol or ":" in raw_symbol:
+        return False
+    try:
+        payload = NSELive().stock_quote(raw_symbol)
+    except Exception:
+        return False
+    return bool(payload and not payload.get("error") and payload.get("priceInfo"))
+
+
 def symbol_candidates(query: str) -> List[str]:
     raw = query.strip().upper()
     if ":" in raw:
         prefix, base = raw.split(":", 1)
         if prefix == "NSE":
-            return [f"{base}.NS", base, f"{base}.BO"]
+            return unique_ordered([*alias_candidates(base, "NSE"), f"{base}.NS", base, f"{base}.BO"])
         if prefix == "BSE":
-            return [f"{base}.BO", base, f"{base}.NS"]
-        return [base]
+            return unique_ordered([*alias_candidates(base, "BSE"), f"{base}.BO", base, f"{base}.NS"])
+        return unique_ordered([*alias_candidates(base), base])
     if "." in raw:
-        return [raw]
-    return [raw, f"{raw}.NS", f"{raw}.BO"]
+        return unique_ordered([raw, *alias_candidates(raw.split(".", 1)[0])])
+    if has_nse_live_symbol(raw):
+        return unique_ordered([*alias_candidates(raw), f"{raw}.NS", f"{raw}.BO", raw])
+    return unique_ordered([*alias_candidates(raw), raw, f"{raw}.NS", f"{raw}.BO"])
+
+
+def provider_label(provider_id: str) -> str:
+    return PROVIDER_LABELS.get(provider_id, provider_id.replace("_", " ").title())
+
+
+def provider_order() -> List[str]:
+    return [item for item in settings.market_data_provider_order if item in PROVIDER_LABELS]
+
+
+def indian_symbol_base(query: str, resolved_symbol: str) -> str | None:
+    raw = query.strip().upper()
+    if raw.startswith("NSE:") or raw.startswith("BSE:"):
+        return raw.split(":", 1)[1]
+    if resolved_symbol.endswith(".NS") or resolved_symbol.endswith(".BO"):
+        return resolved_symbol.split(".", 1)[0].upper()
+    return None
+
+
+def quote_from_jugaad_payload(payload: Dict[str, Any], symbol: str) -> Dict[str, Any] | None:
+    if not payload or payload.get("error") or "priceInfo" not in payload:
+        return None
+
+    price_info = payload.get("priceInfo", {})
+    security_info = payload.get("securityInfo", {})
+    metadata = payload.get("metadata", {})
+
+    return {
+        "provider": "jugaad_data",
+        "provider_label": provider_label("jugaad_data"),
+        "instrument": symbol,
+        "company_name": security_info.get("companyName") or metadata.get("companyName"),
+        "current_price": clean_number(price_info.get("lastPrice")),
+        "open": clean_number(price_info.get("open")),
+        "previous_close": clean_number(price_info.get("previousClose")),
+        "day_high": clean_number(price_info.get("intraDayHighLow", {}).get("max")),
+        "day_low": clean_number(price_info.get("intraDayHighLow", {}).get("min")),
+        "fifty_two_week_high": clean_number(price_info.get("weekHighLow", {}).get("max")),
+        "fifty_two_week_low": clean_number(price_info.get("weekHighLow", {}).get("min")),
+        "volume": clean_int(price_info.get("totalTradedVolume")),
+        "raw": payload,
+    }
+
+
+def try_kite_mcp_quote(_query: str, _resolved_symbol: str) -> Tuple[Dict[str, Any] | None, str]:
+    if not settings.kite_mcp_enabled:
+        return None, "Kite MCP is turned off in configuration."
+    if not settings.kite_mcp_repo_path.exists():
+        return None, f"Kite MCP repo was not found at {settings.kite_mcp_repo_path}."
+    if settings.kite_mcp_mode == "hosted":
+        return None, (
+            "Kite MCP is configured in hosted mode, but dashboard-side OAuth/client bridging is not set up yet. "
+            f"Target endpoint: {settings.kite_mcp_url}"
+        )
+    return None, "Kite MCP self-hosting is prepared, but local Kite credentials and MCP auth are not configured yet."
+
+
+def try_jugaad_quote(query: str, resolved_symbol: str) -> Tuple[Dict[str, Any] | None, str]:
+    if NSELive is None:
+        return None, "jugaad-data is not installed."
+
+    symbol = indian_symbol_base(query, resolved_symbol)
+    if not symbol:
+        return None, "jugaad-data only applies to NSE/BSE instruments."
+
+    try:
+        payload = NSELive().stock_quote(symbol)
+    except Exception as exc:  # pragma: no cover - network/provider guard
+        return None, f"jugaad-data quote lookup failed: {exc}"
+
+    quote = quote_from_jugaad_payload(payload, symbol)
+    if not quote:
+        return None, f"jugaad-data did not return a valid live quote for {symbol}."
+    return quote, f"Live quote resolved through jugaad-data for {symbol}."
+
+
+def yfinance_quote(info: Dict[str, Any], history: pd.DataFrame, resolved_symbol: str) -> Tuple[Dict[str, Any], str]:
+    latest_close = clean_number(history["Close"].dropna().iloc[-1]) if not history.empty else None
+    latest_open = clean_number(history["Open"].dropna().iloc[-1]) if not history.empty else None
+    latest_high = clean_number(history["High"].dropna().iloc[-1]) if not history.empty else None
+    latest_low = clean_number(history["Low"].dropna().iloc[-1]) if not history.empty else None
+    latest_volume = clean_int(history["Volume"].dropna().iloc[-1]) if not history.empty else None
+    quote = {
+        "provider": "yfinance",
+        "provider_label": provider_label("yfinance"),
+        "instrument": resolved_symbol,
+        "company_name": info.get("longName") or resolved_symbol,
+        "current_price": clean_number(info.get("currentPrice")) or clean_number(info.get("regularMarketPrice")) or latest_close,
+        "open": clean_number(info.get("open")) or latest_open,
+        "previous_close": clean_number(info.get("previousClose")),
+        "day_high": clean_number(info.get("dayHigh")) or latest_high,
+        "day_low": clean_number(info.get("dayLow")) or latest_low,
+        "fifty_two_week_high": clean_number(info.get("fiftyTwoWeekHigh")),
+        "fifty_two_week_low": clean_number(info.get("fiftyTwoWeekLow")),
+        "volume": clean_int(info.get("volume")) or latest_volume,
+        "raw": None,
+    }
+    return quote, f"Used Yahoo Finance as the market quote source for {resolved_symbol}."
+
+
+def resolve_live_quote(query: str, resolved_symbol: str, info: Dict[str, Any], history: pd.DataFrame) -> Dict[str, Any]:
+    trace: List[Dict[str, Any]] = []
+    for provider_id in provider_order():
+        if provider_id == "kite_mcp":
+            quote, message = try_kite_mcp_quote(query, resolved_symbol)
+        elif provider_id == "jugaad_data":
+            quote, message = try_jugaad_quote(query, resolved_symbol)
+        elif provider_id == "yfinance":
+            quote, message = yfinance_quote(info, history, resolved_symbol)
+        else:
+            continue
+
+        trace.append(
+            {
+                "provider": provider_id,
+                "label": provider_label(provider_id),
+                "status": "ready" if quote else "skipped",
+                "message": message,
+            }
+        )
+        if quote:
+            quote["trace"] = trace
+            return quote
+
+    raise MarketDataError(f"Could not assemble any market quote source for '{query}'.")
+
+
+def apply_live_quote(technicals: Dict[str, Any], live_quote: Dict[str, Any]) -> Dict[str, Any]:
+    merged = dict(technicals)
+    if live_quote.get("current_price") is not None:
+        merged["current_price"] = live_quote["current_price"]
+    if live_quote.get("fifty_two_week_high") is not None:
+        merged["fifty_two_week_high"] = live_quote["fifty_two_week_high"]
+    if live_quote.get("fifty_two_week_low") is not None:
+        merged["fifty_two_week_low"] = live_quote["fifty_two_week_low"]
+    merged["live_open"] = live_quote.get("open")
+    merged["live_previous_close"] = live_quote.get("previous_close")
+    merged["live_day_high"] = live_quote.get("day_high")
+    merged["live_day_low"] = live_quote.get("day_low")
+    merged["live_volume"] = live_quote.get("volume")
+    return merged
+
+
+def market_data_status() -> Dict[str, Any]:
+    providers: List[Dict[str, Any]] = []
+    providers.append(
+        {
+            "id": "kite_mcp",
+            "label": provider_label("kite_mcp"),
+            "enabled": settings.kite_mcp_enabled,
+            "available": settings.kite_mcp_enabled and settings.kite_mcp_repo_path.exists(),
+            "message": (
+                f"Kite MCP repo detected at {settings.kite_mcp_repo_path}. Hosted endpoint: {settings.kite_mcp_url}"
+                if settings.kite_mcp_repo_path.exists()
+                else f"Clone zerodha/kite-mcp-server into {settings.kite_mcp_repo_path} or use the hosted endpoint {settings.kite_mcp_url}."
+            ),
+        }
+    )
+    providers.append(
+        {
+            "id": "jugaad_data",
+            "label": provider_label("jugaad_data"),
+            "enabled": True,
+            "available": NSELive is not None,
+            "message": "Ready to use NSE public quote data." if NSELive is not None else "Install jugaad-data to use NSE public quote fallback.",
+        }
+    )
+    providers.append(
+        {
+            "id": "yfinance",
+            "label": provider_label("yfinance"),
+            "enabled": True,
+            "available": True,
+            "message": "Ready for history, fundamentals, and headline fallback.",
+        }
+    )
+    return {
+        "order": [provider_label(item) for item in provider_order()],
+        "providers": providers,
+    }
 
 
 def resolve_symbol(query: str) -> Tuple[str, yf.Ticker, Dict[str, Any], pd.DataFrame]:
@@ -415,7 +651,8 @@ def collect_stock_data(query: str) -> Dict[str, Any]:
         yf.download(benchmark_symbol(resolved_symbol), period="1y", interval="1d", auto_adjust=False, progress=False)
     ).dropna(how="all")
 
-    technicals = compute_technicals(history, benchmark)
+    live_quote = resolve_live_quote(query, resolved_symbol, info, history)
+    technicals = apply_live_quote(compute_technicals(history, benchmark), live_quote)
     fundamentals = compute_fundamentals(ticker, info)
     fundamentals["financial_status"] = financial_status(fundamentals)
 
@@ -430,4 +667,19 @@ def collect_stock_data(query: str) -> Dict[str, Any]:
         "technicals": technicals,
         "fundamentals": fundamentals,
         "news": fetch_news(ticker),
+        "market_context": {
+            "provider_order": provider_order(),
+            "quote_provider": live_quote["provider"],
+            "quote_provider_label": live_quote["provider_label"],
+            "quote_message": live_quote["trace"][-1]["message"] if live_quote.get("trace") else "",
+            "quote_trace": live_quote.get("trace", []),
+            "quote_snapshot": {
+                "current_price": live_quote.get("current_price"),
+                "open": live_quote.get("open"),
+                "previous_close": live_quote.get("previous_close"),
+                "day_high": live_quote.get("day_high"),
+                "day_low": live_quote.get("day_low"),
+                "volume": live_quote.get("volume"),
+            },
+        },
     }

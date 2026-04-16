@@ -13,7 +13,7 @@ from app.config import PROJECT_ROOT, settings
 from app.jobs import job_manager
 from app.models import AnalysisRequest
 from app.services.analysis_engine import build_comparison, build_report
-from app.services.market_data import MarketDataError, collect_stock_data
+from app.services.market_data import MarketDataError, collect_stock_data, market_data_status
 from app.services.request_intelligence import interpret_user_request
 from app.services.tradingview_bridge import tradingview_bridge
 
@@ -55,15 +55,18 @@ def serialize(obj: Any) -> Any:
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request) -> HTMLResponse:
+    provider_status = market_data_status()
     return templates.TemplateResponse(
         "index.html",
         {
-        "request": request,
-        "title": settings.app_title,
-        "tradingview_enabled": settings.tradingview_enabled or settings.tradingview_desktop_enabled,
-        "tradingview_configured": tradingview_bridge.status()["available"],
-    },
-)
+            "request": request,
+            "title": settings.app_title,
+            "tradingview_enabled": settings.tradingview_enabled or settings.tradingview_desktop_enabled,
+            "tradingview_configured": tradingview_bridge.status()["available"],
+            "market_data_status": provider_status,
+            "market_data_order_label": " -> ".join(provider_status["order"]),
+        },
+    )
 
 
 @app.get("/health")
@@ -72,6 +75,7 @@ async def health() -> Dict[str, Any]:
         "status": "ok",
         "app": settings.app_title,
         "tradingview": tradingview_bridge.status(),
+        "market_data": market_data_status(),
     }
 
 
@@ -86,8 +90,16 @@ def emit(job_id: str, step: str, message: str, progress: int, symbol: str | None
 
 
 def analyze_symbol_sync(job_id: str, symbol: str, interval: str, include_snapshot: bool) -> Dict[str, Any]:
+    emit(job_id, "providers", f"Checking market data providers in order: {' -> '.join(market_data_status()['order'])}.", 4, symbol)
     emit(job_id, "resolve", f"Resolving live symbol for {symbol}.", 6, symbol)
     stock = collect_stock_data(symbol)
+    emit(
+        job_id,
+        "market-source",
+        f"Using {stock['market_context']['quote_provider_label']} as the live quote source for {stock['resolved_symbol']}.",
+        12,
+        symbol,
+    )
     emit(job_id, "market", f"Fetched market profile and price history for {stock['resolved_symbol']}.", 18, symbol)
     emit(job_id, "technicals", f"Computed technical indicators for {stock['resolved_symbol']}.", 34, symbol)
     emit(job_id, "fundamentals", f"Built the fundamentals snapshot for {stock['resolved_symbol']}.", 48, symbol)

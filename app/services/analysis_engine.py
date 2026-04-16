@@ -276,6 +276,7 @@ def build_report(stock: Dict[str, Any]) -> Dict[str, Any]:
     label = pick_label(swing["score"], long_term["score"])
     risks = build_risks(stock, label)
     swing_plan = build_swing_plan(stock, swing["score"])
+    market_context = stock.get("market_context", {})
 
     conviction = round(
         max(1.0, min(10.0, ((max(swing["score"], long_term["score"]) * 0.6) + ((10 - risks["rating"]) * 10 * 0.4)) / 10)),
@@ -317,6 +318,7 @@ def build_report(stock: Dict[str, Any]) -> Dict[str, Any]:
             "company_name": stock["company_name"],
             "currency": stock["currency"],
             "tradingview_symbol": stock["tradingview_symbol"],
+            "quote_provider_label": market_context.get("quote_provider_label"),
         },
         "summary": {
             "current_price": t.get("current_price"),
@@ -335,6 +337,7 @@ def build_report(stock: Dict[str, Any]) -> Dict[str, Any]:
                 "green" if label in {"Long-Term Investment", "Swing Trade"} else "yellow" if label == "Watchlist" else "red",
                 label,
             ),
+            "quote_source": market_context.get("quote_provider_label", "Unknown"),
             "conviction_score": conviction,
             "confidence_level": confidence_level(label, conviction),
         },
@@ -346,6 +349,7 @@ def build_report(stock: Dict[str, Any]) -> Dict[str, Any]:
         },
         "technicals": t,
         "fundamentals": f,
+        "market_context": market_context,
         "swing_plan": swing_plan,
         "long_term_view": {
             "qualifies": label == "Long-Term Investment" or long_term["score"] >= 70,

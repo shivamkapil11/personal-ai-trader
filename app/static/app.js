@@ -184,6 +184,7 @@ function renderReport(report) {
 
   const summaryTiles = [
     createTile("Current Price", formatValue(summary.current_price)),
+    createTile("Quote Source", summary.quote_source || "N/A"),
     createTile("Market Cap", report.display.market_cap_compact),
     createTile("52W High", formatValue(summary.fifty_two_week_high)),
     createTile("52W Low", formatValue(summary.fifty_two_week_low)),
@@ -299,6 +300,19 @@ function renderReport(report) {
         </div>
         <div class="metric-grid">${fundamentalTiles}</div>
         <p class="muted">Financial trend label: ${fundamentals.financial_status || "N/A"}</p>
+      </section>
+
+      <section>
+        <div class="section-title">
+          <div>
+            <p class="eyebrow">Data Source</p>
+            <h3>Live quote tracking</h3>
+          </div>
+        </div>
+        <div class="tile">
+          <div class="tile-label">${report.market_context?.quote_provider_label || "Quote source"}</div>
+          <div class="muted">${report.market_context?.quote_message || "No quote-source details available."}</div>
+        </div>
       </section>
 
       <section>

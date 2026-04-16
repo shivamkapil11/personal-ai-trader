@@ -21,6 +21,7 @@
           <p class="hero-text">
             Single-stock deep dives, side-by-side comparisons, live research progress, optional TradingView snapshots, and automatic prompt structuring from your own investing notes.
           </p>
+          <p class="helper-text">Market data path: {{ market_data_order_label }}</p>
         </div>
         <div class="hero-panel">
           <div class="status-chip {{ 'chip-green' if tradingview_configured else 'chip-yellow' }}">
@@ -28,16 +29,16 @@
           </div>
           <div class="hero-stat-grid">
             <div class="stat-card">
+              <span>Live Data Order</span>
+              <strong>{{ market_data_order_label }}</strong>
+            </div>
+            <div class="stat-card">
+              <span>Kite MCP</span>
+              <strong>{{ market_data_status.providers[0].label if market_data_status.providers[0].available else 'Pending setup' }}</strong>
+            </div>
+            <div class="stat-card">
               <span>Compare</span>
               <strong>Up to 3 stocks</strong>
-            </div>
-            <div class="stat-card">
-              <span>Updates</span>
-              <strong>Live step feed</strong>
-            </div>
-            <div class="stat-card">
-              <span>Charts</span>
-              <strong>TradingView snapshots</strong>
             </div>
           </div>
         </div>
