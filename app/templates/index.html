@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ title }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body data-tradingview-configured="{{ 'true' if tradingview_configured else 'false' }}">
+    <div class="page-shell">
+      <header class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Local Research Engine</p>
+          <h1>Write what you mean. Get a decision dashboard.</h1>
+          <p class="hero-text">
+            Single-stock deep dives, side-by-side comparisons, live research progress, optional TradingView snapshots, and automatic prompt structuring from your own investing notes.
+          </p>
+        </div>
+        <div class="hero-panel">
+          <div class="status-chip {{ 'chip-green' if tradingview_configured else 'chip-yellow' }}">
+            TradingView {{ 'Connected' if tradingview_configured else 'Needs Cookies' }}
+          </div>
+          <div class="hero-stat-grid">
+            <div class="stat-card">
+              <span>Compare</span>
+              <strong>Up to 3 stocks</strong>
+            </div>
+            <div class="stat-card">
+              <span>Updates</span>
+              <strong>Live step feed</strong>
+            </div>
+            <div class="stat-card">
+              <span>Charts</span>
+              <strong>TradingView snapshots</strong>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="control-panel">
+          <form id="analysis-form" class="query-form">
+            <label class="field">
+              <span>Research request or stock symbols</span>
+              <textarea
+                id="query"
+                name="query"
+                rows="4"
+                placeholder="Compare Powergrid, NTPC and Adani Energy Solutions for dividend safety, valuation comfort, and swing setup quality."
+              ></textarea>
+            </label>
+
+            <label class="field">
+              <span>Your thoughts, angle, or checklist</span>
+              <textarea
+                id="thoughts"
+                name="thoughts"
+                rows="4"
+                placeholder="I want to know which one is better for 6-12 months, which one is safer on downside, and whether any of them is a clean swing trade right now."
+              ></textarea>
+            </label>
+
+            <div class="form-row">
+              <label class="field compact">
+                <span>Chart interval</span>
+                <select id="chart-interval" name="chart_interval">
+                  <option value="D">Daily</option>
+                  <option value="W">Weekly</option>
+                  <option value="60">1 Hour</option>
+                  <option value="240">4 Hour</option>
+                  <option value="15">15 Min</option>
+                </select>
+              </label>
+
+              <label class="toggle-field">
+                <input id="include-snapshot" type="checkbox" checked />
+                <span>Try TradingView snapshot</span>
+              </label>
+            </div>
+
+            <div class="preset-row">
+              <button type="button" class="preset" data-query="POWERGRID" data-thoughts="Tell me whether this is better suited as a swing trade right now or a long-term hold.">POWERGRID</button>
+              <button type="button" class="preset" data-query="Compare NTPC and POWERGRID" data-thoughts="Focus on dividend yield, downside risk, and which one fits a steadier long-term portfolio better.">NTPC vs POWERGRID</button>
+              <button type="button" class="preset" data-query="Compare RELIANCE, TCS and INFY" data-thoughts="Rank them for business quality, valuation comfort, and whether any one of them has the strongest 1-3 year setup.">Reliance vs TCS vs INFY</button>
+              <button type="button" class="preset" data-query="Compare AAPL, MSFT and NVDA" data-thoughts="Show me the best long-term compounder, the best swing setup, and the biggest valuation risk.">AAPL vs MSFT vs NVDA</button>
+            </div>
+
+            <div class="action-row">
+              <button type="submit" class="primary-button">Run Research</button>
+              <p class="helper-text">You can paste tickers, company names, or a natural-language prompt. The engine will infer compare mode, organize your notes, and then run the stock analysis. TradingView Desktop snapshots are preferred and restored to your previous chart after capture.</p>
+            </div>
+          </form>
+        </section>
+
+        <section class="results-shell">
+          <aside class="progress-panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Research Feed</p>
+                <h2>What the engine is doing</h2>
+              </div>
+              <div id="progress-pill" class="status-chip chip-yellow">Idle</div>
+            </div>
+            <div class="progress-meter">
+              <div id="progress-bar" class="progress-bar"></div>
+            </div>
+            <ul id="progress-log" class="progress-log"></ul>
+          </aside>
+
+          <section id="result-board" class="result-board empty-state">
+            <div class="empty-card">
+              <p class="eyebrow">Ready</p>
+              <h2>No research package yet</h2>
+              <p>Run a ticker or compare set and the dashboard will fill with scores, charts, technicals, fundamentals, risk notes, and decision tags.</p>
+            </div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <div id="loading-screen" class="loading-screen hidden">
+      <div class="loading-card">
+        <div class="loading-orbit"></div>
+        <p class="eyebrow">Live Run</p>
+        <h2>Building your stock dashboard</h2>
+        <p id="loading-message">Waiting to start...</p>
+      </div>
+    </div>
+
+    <script src="/static/app.js" defer></script>
+  </body>
+</html>
