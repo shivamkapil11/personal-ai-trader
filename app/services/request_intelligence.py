@@ -5,6 +5,8 @@ from typing import Any, Dict, List
 
 import yfinance as yf
 
+from app.services.agent_registry import agent_registry
+
 
 COMPARE_PATTERN = re.compile(r"\b(compare|vs|versus|against|better than)\b", re.IGNORECASE)
 EXPLICIT_SYMBOL_PATTERN = re.compile(r"\b(?:NSE|BSE|NASDAQ|NYSE):[A-Z0-9._-]+\b", re.IGNORECASE)
@@ -232,7 +234,15 @@ def summarize_notes(thoughts: str) -> List[str]:
     return highlights
 
 
-def build_framework(mode: str, horizon: str, focus_areas: List[str]) -> Dict[str, List[str]]:
+def merge_focus_areas(detected: List[str], preset_focus: List[str]) -> List[str]:
+    combined: List[str] = []
+    for area in [*preset_focus, *detected]:
+        if area not in combined:
+            combined.append(area)
+    return combined
+
+
+def build_framework(mode: str, horizon: str, focus_areas: List[str], agent: Dict[str, Any]) -> Dict[str, List[str]]:
     steps = [
         "Start by separating the stock story from the stock price setup so business quality and timing do not get mixed together.",
         "Decide early whether the main goal is a swing, a long-term investment, or simply building a watchlist.",
@@ -259,19 +269,24 @@ def build_framework(mode: str, horizon: str, focus_areas: List[str]) -> Dict[str
         steps.append("Write the downside case before the upside case so the risk-reward stays honest.")
         checklist.append("What is the most realistic downside scenario if the thesis is wrong?")
 
+    if agent.get("workflow"):
+        steps.append(f"{agent.get('label')} lens: {' -> '.join(agent.get('workflow', [])[:4])}.")
+    if agent.get("description"):
+        checklist.append(f"Does the setup actually fit the {agent.get('label', 'selected agent')} lens?")
+
     return {"steps": steps[:5], "checklist": checklist[:6]}
 
 
-def build_intent_summary(symbols: List[str], mode: str, horizon: str, focus_labels: List[str]) -> str:
+def build_intent_summary(symbols: List[str], mode: str, horizon: str, focus_labels: List[str], agent: Dict[str, Any]) -> str:
     stock_text = ", ".join(symbols)
     mode_text = "compare" if mode == "compare" else "analyze"
     focus_text = ", ".join(focus_labels[:3]) if focus_labels else "core stock factors"
     if horizon == "balanced":
-        return f"The engine will {mode_text} {stock_text} with a balanced lens across technicals, fundamentals, and risk."
-    return f"The engine will {mode_text} {stock_text} with a {horizon} bias, while prioritizing {focus_text}."
+        return f"The engine will {mode_text} {stock_text} with a balanced lens, guided by the {agent.get('label', 'selected')} agent."
+    return f"The engine will {mode_text} {stock_text} with a {horizon} bias, while prioritizing {focus_text} through the {agent.get('label', 'selected')} lens."
 
 
-def interpret_user_request(query: str, thoughts: str = "") -> Dict[str, Any]:
+def interpret_user_request(query: str, thoughts: str = "", agent_preset: str = "auto") -> Dict[str, Any]:
     query = query.strip()
     thoughts = thoughts.strip()
     combined = "\n".join(part for part in [query, thoughts] if part).strip()
@@ -289,9 +304,10 @@ def interpret_user_request(query: str, thoughts: str = "") -> Dict[str, Any]:
 
     mode = "compare" if len(symbols) > 1 else "single"
     horizon = detect_time_horizon(combined)
-    focus_areas = detect_focus_areas(combined)
+    agent = agent_registry.resolve(query, thoughts, agent_preset)
+    focus_areas = merge_focus_areas(detect_focus_areas(combined), agent.get("focus_areas", []))
     focus_labels = [FOCUS_LABELS[item] for item in focus_areas]
-    framework = build_framework(mode, horizon, focus_areas)
+    framework = build_framework(mode, horizon, focus_areas, agent)
     notes_highlights = summarize_notes(thoughts)
 
     return {
@@ -304,9 +320,20 @@ def interpret_user_request(query: str, thoughts: str = "") -> Dict[str, Any]:
         "time_horizon_label": "Balanced" if horizon == "balanced" else horizon.title(),
         "focus_areas": focus_areas,
         "focus_labels": focus_labels,
+        "agent": {
+            "id": agent.get("id"),
+            "label": agent.get("label"),
+            "description": agent.get("description"),
+            "tone": agent.get("tone", "yellow"),
+            "selection_mode": agent.get("selection_mode"),
+            "selection_reason": agent.get("selection_reason"),
+            "workflow": agent.get("workflow", []),
+            "best_for": agent.get("best_for", []),
+            "vibe_inspired_from": agent.get("vibe_inspired_from"),
+        },
         "notes_highlights": notes_highlights,
-        "intent_summary": build_intent_summary(symbols, mode, horizon, focus_labels),
-        "organized_prompt": f"{'Compare' if mode == 'compare' else 'Analyze'} {', '.join(symbols)}. Prioritize {', '.join(focus_labels[:4]).lower()} and clearly separate swing-trade quality from long-term investment quality.",
+        "intent_summary": build_intent_summary(symbols, mode, horizon, focus_labels, agent),
+        "organized_prompt": f"{'Compare' if mode == 'compare' else 'Analyze'} {', '.join(symbols)} using the {agent.get('label', 'selected')} lens. Prioritize {', '.join(focus_labels[:4]).lower()} and clearly separate swing-trade quality from long-term investment quality.",
         "framework_steps": framework["steps"],
         "thinking_checklist": framework["checklist"],
     }

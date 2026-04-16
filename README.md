@@ -92,6 +92,7 @@ Key groups:
 
 - `Kite MCP`: hosted session bridge is wired into FastAPI and preserves Zerodha login/consent flow
 - `Firebase Auth`: prepared, defaults to local dev fallback when credentials are absent
+- `Firebase Admin`: supports either `FIREBASE_ADMIN_CREDENTIALS_PATH` locally or `FIREBASE_ADMIN_CREDENTIALS_JSON` for hosted deploys
 - `Firestore`: prepared for feedback storage, not enabled by default
 - `PostgreSQL`: runtime store supports Postgres when `POSTGRES_ENABLED=true` and `POSTGRES_DSN` is set
 - `TradingView Desktop`: supported through the local desktop bridge when available

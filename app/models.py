@@ -9,6 +9,7 @@ class AnalysisRequest(BaseModel):
     query: str = Field(..., min_length=1, description="Comma or newline separated stock symbols")
     thoughts: str = Field(default="", description="Optional user notes or natural-language prompt")
     chart_interval: str = Field(default="D", description="TradingView interval code")
+    agent_preset: str = Field(default="auto", description="Optional local research agent preset")
     include_tradingview_snapshot: bool = True
 
     @field_validator("chart_interval")
@@ -20,7 +21,7 @@ class AnalysisRequest(BaseModel):
             raise ValueError("Unsupported chart interval.")
         return cleaned
 
-    @field_validator("query", "thoughts")
+    @field_validator("query", "thoughts", "agent_preset")
     @classmethod
     def strip_text(cls, value: str) -> str:
         return value.strip()

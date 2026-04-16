@@ -13,6 +13,7 @@ const form = document.getElementById("analysis-form");
 const queryInput = document.getElementById("query");
 const thoughtsInput = document.getElementById("thoughts");
 const intervalInput = document.getElementById("chart-interval");
+const agentPresetInput = document.getElementById("agent-preset");
 const snapshotInput = document.getElementById("include-snapshot");
 const progressLog = document.getElementById("progress-log");
 const progressBar = document.getElementById("progress-bar");
@@ -21,6 +22,8 @@ const resultBoard = document.getElementById("result-board");
 const loadingScreen = document.getElementById("loading-screen");
 const loadingMessage = document.getElementById("loading-message");
 const loadingOverlayMessage = document.getElementById("loading-overlay-message");
+const progressEstimate = document.getElementById("progress-estimate");
+const loadingEstimate = document.getElementById("loading-estimate");
 const transitionHelper = document.getElementById("transition-helper");
 const googleLoginButton = document.getElementById("google-login-button");
 const heroLoginButton = document.getElementById("hero-login-button");
@@ -46,6 +49,8 @@ const portfolioPanel = document.getElementById("portfolio-panel");
 const watchlistPanel = document.getElementById("watchlist-panel");
 const knowledgePanel = document.getElementById("knowledge-panel");
 const infrastructurePanel = document.getElementById("infrastructure-panel");
+const agentHelper = document.getElementById("agent-helper");
+const agentPanel = document.getElementById("agent-panel");
 const addWatchlistButton = document.getElementById("add-watchlist-button");
 const dashboardConnectKiteButton = document.getElementById("dashboard-connect-kite-button");
 const sideConnectKiteButton = document.getElementById("side-connect-kite-button");
@@ -55,12 +60,19 @@ const feedbackClose = document.getElementById("feedback-close");
 const feedbackSubmit = document.getElementById("feedback-submit");
 const feedbackMessage = document.getElementById("feedback-message");
 const feedbackStatus = document.getElementById("feedback-status");
+const resultToolbar = document.getElementById("result-toolbar");
+const resultHomeButton = document.getElementById("result-home-button");
+const resultSearchForm = document.getElementById("result-search-form");
+const resultSearchInput = document.getElementById("result-search-input");
 
 let appState = bootstrap;
 let currentEventSource = null;
 let highestProgress = 0;
 let firebaseAuthContext = null;
 let activeScreen = "auth";
+let kiteStatusPoller = null;
+let kitePollingAttempts = 0;
+let kiteSyncInFlight = false;
 
 function showScreen(key) {
   activeScreen = key;
@@ -109,6 +121,30 @@ function setLoadingOverlayMessage(text) {
   if (loadingOverlayMessage) loadingOverlayMessage.textContent = text;
 }
 
+function setLoadingEstimate(text) {
+  if (loadingEstimate) loadingEstimate.textContent = text || "";
+  if (progressEstimate) progressEstimate.textContent = text || "Signals update as the run advances.";
+}
+
+function formatClock(value) {
+  if (!value) return "";
+  try {
+    return new Date(value).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  } catch (_) {
+    return "";
+  }
+}
+
+function formatRelativeMoment(value) {
+  if (!value) return "";
+  try {
+    const date = new Date(value);
+    return date.toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  } catch (_) {
+    return "";
+  }
+}
+
 function renderProviderVisibility() {
   if (!providerVisibility) return;
   const providers = appState.market_data?.providers || [];
@@ -132,6 +168,44 @@ function renderMarketDataPanel() {
     <p class="muted">${providerLabels || "Provider stack unavailable."}</p>
     <div class="placeholder-pills">
       ${(marketData.order || []).map((item) => createBadge(item.replaceAll("_", " "), "tone-yellow")).join("")}
+    </div>
+  `;
+}
+
+function agentOptions() {
+  return appState.agents?.selectable || appState.agents?.summary?.selectable || [];
+}
+
+function selectedAgentMeta() {
+  const selectedId = agentPresetInput?.value || "auto";
+  return agentOptions().find((item) => item.id === selectedId) || agentOptions()[0] || null;
+}
+
+function renderAgentHelper() {
+  if (!agentHelper) return;
+  const selected = selectedAgentMeta();
+  if (!selected) {
+    agentHelper.textContent = "Choose a local research agent to bias the workflow.";
+    return;
+  }
+  const bestFor = (selected.best_for || []).slice(0, 2).join(", ");
+  agentHelper.textContent = `${selected.description}${bestFor ? ` Best for ${bestFor}.` : ""}`;
+}
+
+function renderAgentPanel() {
+  if (!agentPanel) return;
+  const options = agentOptions();
+  if (!options.length) {
+    agentPanel.textContent = "Local research agents are not loaded yet.";
+    return;
+  }
+  agentPanel.innerHTML = `
+    <p class="muted">Local-only research agents route the same data through different decision lenses. They do not send extra personal data anywhere.</p>
+    <div class="placeholder-pills">
+      ${options
+        .slice(1)
+        .map((item) => createBadge(item.label, `tone-${item.tone || "yellow"}`))
+        .join("")}
     </div>
   `;
 }
@@ -170,8 +244,8 @@ function renderHeroMeta() {
   const user = appState.session;
   const marketData = appState.market_data || {};
   const sourceCopy = user
-    ? `Welcome back, ${user.name || "there"}. Current market data path: ${(marketData.order || []).join(" -> ")}.`
-    : "Provider visibility, stock intelligence, and portfolio context stay in one clean workflow.";
+    ? `Welcome back, ${user.name || "there"}. Live data flows through ${(marketData.order || []).join(" -> ")}.`
+    : "Provider visibility, stock intelligence, and portfolio context stay in one cleaner workflow.";
   if (dashboardSourceNote) dashboardSourceNote.textContent = sourceCopy;
   if (heroKiteStatus) {
     const kite = appState.kite || {};
@@ -229,15 +303,39 @@ function renderPortfolio() {
   const payload = appState.portfolio || {};
   const insights = payload.insights || {};
   const kite = appState.kite || {};
+  const snapshot = payload.latest_snapshot || null;
+  const statusMessage =
+    payload.sync_message ||
+    insights.message ||
+    payload.holdings_status?.message ||
+    payload.positions_status?.message ||
+    kite.message ||
+    "Kite portfolio is not connected yet.";
   if (!portfolioPanel) return;
 
   if (!insights.available) {
+    const snapshotSummary = snapshot?.summary || {};
     portfolioPanel.innerHTML = `
-      <p class="muted">${insights.message || kite.message || "Kite portfolio is not connected yet."}</p>
-      <div class="placeholder-pills">
-        ${createBadge("Personalized holdings")}
-        ${createBadge("P&L overview")}
-        ${createBadge("Concentration risk")}
+      <div class="module-stack">
+        <p class="muted">${statusMessage}</p>
+        ${
+          snapshot
+            ? `
+            <div class="status-board-grid compact-grid">
+              ${createTile("Last Sync Value", formatValue(snapshotSummary.total_value))}
+              ${createTile("Diversification", snapshotSummary.diversification_view || "N/A")}
+              ${createTile("Concentration", snapshotSummary.concentration_risk || "N/A")}
+            </div>
+            <p class="muted compact-note">Last successful sync: ${formatRelativeMoment(snapshot.createdAt)}</p>
+          `
+            : `
+            <div class="placeholder-pills">
+              ${createBadge("Personalized holdings")}
+              ${createBadge("P&L overview")}
+              ${createBadge("Concentration risk")}
+            </div>
+          `
+        }
       </div>
     `;
     return;
@@ -258,14 +356,17 @@ function renderPortfolio() {
     .join("");
 
   portfolioPanel.innerHTML = `
-    <div class="status-board-grid">
+    <div class="module-stack">
+      <div class="status-board-grid">
       ${createTile("Total Value", formatValue(summary.total_value))}
       ${createTile("Total P&L", formatValue(summary.total_pnl))}
       ${createTile("Diversification", summary.diversification_view || "N/A")}
       ${createTile("Concentration", summary.concentration_risk || "N/A")}
+      </div>
+      ${payload.sync_message ? `<p class="muted compact-note">${payload.sync_message}</p>` : ""}
+      <div class="mini-list">${convictionItems}</div>
+      <ul class="list">${riskItems}</ul>
     </div>
-    <div class="mini-list">${convictionItems}</div>
-    <ul class="list">${riskItems}</ul>
   `;
 }
 
@@ -343,7 +444,31 @@ function renderComparison(comparison) {
         ${createTile("Best Swing", comparison.summary.best_swing)}
         ${createTile("Lowest Risk", comparison.summary.lowest_risk)}
         ${comparison.summary.best_fit_for_prompt ? createTile("Best Fit For Prompt", comparison.summary.best_fit_for_prompt) : ""}
+        ${comparison.summary.agent_lens ? createTile("Agent Lens", comparison.summary.agent_lens) : ""}
       </div>
+    </section>
+  `;
+}
+
+function renderAgentLens(context) {
+  const agent = context?.agent;
+  if (!agent?.label) return "";
+  const workflowItems = (agent.workflow || []).map((item) => `<li>${item}</li>`).join("");
+  return `
+    <section class="agent-section glass-card">
+      <div class="section-title">
+        <div>
+          <p class="eyebrow">Research Agent</p>
+          <h2>${agent.label}</h2>
+        </div>
+        <span class="status-chip chip-${agent.tone || "yellow"}">${agent.selection_mode === "manual" ? "Manual" : "Auto"}</span>
+      </div>
+      <p class="muted">${agent.description || "This run used a local research lens."}</p>
+      <div class="badge-row">
+        ${createBadge(agent.selection_reason || "Local preset applied.", `tone-${agent.tone || "yellow"}`)}
+        ${(agent.best_for || []).slice(0, 3).map((item) => createBadge(item)).join("")}
+      </div>
+      ${workflowItems ? `<ul class="list">${workflowItems}</ul>` : ""}
     </section>
   `;
 }
@@ -366,14 +491,7 @@ function renderNews(news) {
 }
 
 function renderSnapshot(snapshot) {
-  if (!snapshot || snapshot.status !== "ready") {
-    return `
-      <div class="tile snapshot-card">
-        <div class="tile-label">TradingView Snapshot</div>
-        <div class="muted">${snapshot?.message || "Snapshot unavailable."}</div>
-      </div>
-    `;
-  }
+  if (!snapshot || snapshot.status !== "ready") return "";
   return `
     <div class="tile snapshot-card">
       <div class="tile-label">TradingView Snapshot • ${snapshot.symbol} • ${snapshot.interval}</div>
@@ -389,15 +507,16 @@ function renderReport(report) {
   const swing = report.swing_plan;
   const risks = report.risks;
   const reasoning = report.reasoning_context || {};
+  const selectedAgent = reasoning.agent || {};
 
   const summaryTiles = [
     createTile("Current Price", formatValue(summary.current_price)),
-    createTile("Quote Source", summary.quote_source || "N/A"),
     createTile("Market Cap", report.display.market_cap_compact),
     createTile("52W High", formatValue(summary.fifty_two_week_high)),
     createTile("52W Low", formatValue(summary.fifty_two_week_low)),
     createTile("Conviction", formatValue(summary.conviction_score, "N/A", "/10")),
     createTile("Confidence", summary.confidence_level),
+    createTile("Agent Lens", selectedAgent.label || "Balanced"),
   ].join("");
 
   const technicalTiles = [
@@ -438,6 +557,20 @@ function renderReport(report) {
       </ul>
     `
     : `<div class="tile"><div class="tile-label">Swing setup</div><div class="muted">${swing.why_not}</div></div>`;
+  const snapshotMarkup = renderSnapshot(report.snapshot);
+  const hasNews = Array.isArray(report.news) && report.news.length > 0;
+  const chartAndNewsMarkup =
+    snapshotMarkup || hasNews
+      ? `
+      <section>
+        <div class="section-title"><div><p class="eyebrow">Latest Context</p><h3>Chart and news</h3></div></div>
+        <div class="chart-grid">
+          ${snapshotMarkup}
+          ${hasNews ? `<div class="news-grid">${renderNews(report.news)}</div>` : ""}
+        </div>
+      </section>
+    `
+      : "";
 
   return `
     <article class="stock-card glass-card">
@@ -483,13 +616,6 @@ function renderReport(report) {
         </div>
       </section>
       <section>
-        <div class="section-title"><div><p class="eyebrow">Data Source</p><h3>Live quote tracking</h3></div></div>
-        <div class="tile">
-          <div class="tile-label">${report.market_context?.quote_provider_label || "Quote source"}</div>
-          <div class="muted">${report.market_context?.quote_message || "No quote-source details available."}</div>
-        </div>
-      </section>
-      <section>
         <div class="section-title"><div><p class="eyebrow">Swing Plan</p><h3>Entry, stop, targets</h3></div></div>
         ${swingMarkup}
       </section>
@@ -504,13 +630,7 @@ function renderReport(report) {
         <ul class="list">${risks.items.map((item) => `<li>${item}</li>`).join("")}</ul>
         <p class="muted">${risks.downside_scenario}</p>
       </section>
-      <section>
-        <div class="section-title"><div><p class="eyebrow">Chart and News</p><h3>Visual and headline context</h3></div></div>
-        <div class="chart-grid">
-          ${renderSnapshot(report.snapshot)}
-          <div class="news-grid">${renderNews(report.news)}</div>
-        </div>
-      </section>
+      ${chartAndNewsMarkup}
     </article>
   `;
 }
@@ -525,16 +645,28 @@ function addProgressEvent(event) {
   setLoadingOverlayMessage(event.message || "Working...");
   const item = document.createElement("li");
   item.className = `progress-event ${event.kind === "error" ? "event-error" : ""}`;
-  item.innerHTML = `<strong>${event.symbol ? `${event.symbol} • ` : ""}${event.step}</strong><span>${event.message}</span>`;
+  item.innerHTML = `
+    <div class="progress-event-head">
+      <strong>${event.symbol ? `${event.symbol} • ` : ""}${event.step}</strong>
+      <span>${formatClock(event.timestamp)}</span>
+    </div>
+    <span>${event.message}</span>
+  `;
   progressLog.prepend(item);
 }
 
 function renderResult(payload) {
-  const contextMarkup = renderRequestContext(payload.request_context);
   const comparisonMarkup = renderComparison(payload.comparison);
+  const agentMarkup = renderAgentLens(payload.request_context);
   const reportMarkup = payload.reports.map(renderReport).join("");
   resultBoard.classList.remove("empty-state");
-  resultBoard.innerHTML = `${contextMarkup}${comparisonMarkup}${reportMarkup}`;
+  resultBoard.innerHTML = `${agentMarkup}${comparisonMarkup}${reportMarkup}`;
+  document.body.dataset.resultView = "focused";
+  if (resultToolbar) resultToolbar.classList.remove("hidden");
+  if (resultSearchInput) {
+    resultSearchInput.value = "";
+    resultSearchInput.placeholder = payload.request?.query || "Search another stock or compare set";
+  }
 }
 
 function resetRunState() {
@@ -545,6 +677,23 @@ function resetRunState() {
   progressPill.className = "status-chip chip-yellow";
   if (loadingMessage) loadingMessage.textContent = "Waiting to start...";
   setLoadingOverlayMessage("Waiting to start...");
+  setLoadingEstimate("");
+  document.body.dataset.resultView = "default";
+  if (resultToolbar) resultToolbar.classList.add("hidden");
+}
+
+function showResearchHome() {
+  document.body.dataset.resultView = "default";
+  if (resultToolbar) resultToolbar.classList.add("hidden");
+  resultBoard.classList.add("empty-state");
+  resultBoard.innerHTML = `
+    <div class="empty-card glass-card">
+      <p class="eyebrow">Ready</p>
+      <h2>No research package yet</h2>
+      <p>Run a ticker or compare set and the dashboard will fill with scores, charts, technicals, fundamentals, risk notes, and decision tags.</p>
+    </div>
+  `;
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 async function fetchJSON(url, options = {}) {
@@ -560,22 +709,113 @@ async function fetchJSON(url, options = {}) {
   return payload;
 }
 
-async function refreshBootstrap() {
+async function loadPortfolioData({ allowFailure = true } = {}) {
+  if (!appState.session) {
+    appState.portfolio = null;
+    renderPortfolio();
+    return null;
+  }
+  try {
+    const portfolio = await fetchJSON("/api/portfolio");
+    appState.portfolio = portfolio;
+    renderPortfolio();
+    return portfolio;
+  } catch (error) {
+    appState.portfolio = {
+      insights: { available: false, message: error.message || "Portfolio insights are not available yet." },
+      sync_message: error.message || "Portfolio insights are not available yet.",
+    };
+    renderPortfolio();
+    if (!allowFailure) throw error;
+    return appState.portfolio;
+  }
+}
+
+function stopKiteStatusPolling() {
+  if (kiteStatusPoller) {
+    window.clearInterval(kiteStatusPoller);
+    kiteStatusPoller = null;
+  }
+  kitePollingAttempts = 0;
+}
+
+async function finalizeKiteConnection() {
+  if (kiteSyncInFlight) return;
+  kiteSyncInFlight = true;
+  stopKiteStatusPolling();
+  showScreen("transition");
+  setTransitionMessage("Kite connected. Syncing holdings, positions, and portfolio signals...");
+  try {
+    await fetchJSON("/api/onboarding/complete", { method: "POST" });
+    await refreshBootstrap({ allowAutoKiteSync: false, loadPortfolio: false });
+    setTransitionMessage("Portfolio connected. Bringing your dashboard back with live context...");
+    await loadPortfolioData();
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+    showScreen("app");
+  } catch (error) {
+    setTransitionMessage(error.message || "Kite connected, but portfolio sync still needs another pass.");
+    await refreshBootstrap({ allowAutoKiteSync: false });
+    showScreen("app");
+  } finally {
+    kiteSyncInFlight = false;
+  }
+}
+
+async function checkKiteStatusAndFinalize() {
+  const status = await fetchJSON("/api/kite/status");
+  appState.kite = status;
+  renderKiteStatus();
+  renderHeroMeta();
+  if (status.kite_connected || status.should_complete_onboarding) {
+    await finalizeKiteConnection();
+    return true;
+  }
+  return false;
+}
+
+function startKiteStatusPolling() {
+  stopKiteStatusPolling();
+  showScreen("transition");
+  setTransitionMessage("Waiting for Zerodha to confirm Kite. Once it does, we’ll sync the portfolio and open your dashboard.");
+  kiteStatusPoller = window.setInterval(async () => {
+    kitePollingAttempts += 1;
+    try {
+      const done = await checkKiteStatusAndFinalize();
+      if (done) return;
+      if (kitePollingAttempts >= 40) {
+        stopKiteStatusPolling();
+        await refreshBootstrap({ allowAutoKiteSync: false });
+        if (appState.session?.onboardingStep === "kite-connect") {
+          showScreen("kite");
+        }
+      }
+    } catch (_) {
+      if (kitePollingAttempts >= 40) {
+        stopKiteStatusPolling();
+        showScreen("kite");
+      }
+    }
+  }, 3000);
+}
+
+async function refreshBootstrap({ allowAutoKiteSync = true, loadPortfolio = true } = {}) {
   appState = await fetchJSON("/api/bootstrap");
   renderProviderVisibility();
   renderUserCard();
   renderHeroMeta();
+  renderAgentPanel();
+  renderAgentHelper();
   renderWatchlist();
   renderKnowledgePanel();
   renderInfrastructurePanel();
   renderMarketDataPanel();
   renderKiteStatus();
-  if (appState.session) {
-    const portfolio = await fetchJSON("/api/portfolio").catch(() => ({
-      insights: { available: false, message: "Portfolio insights are not available yet." },
-    }));
-    appState.portfolio = portfolio;
-    renderPortfolio();
+  if (allowAutoKiteSync && appState.session && appState.kite?.kite_connected && appState.session?.onboardingStep === "kite-connect") {
+    await finalizeKiteConnection();
+    return;
+  }
+  if (appState.session && loadPortfolio && (appState.kite?.kite_connected || appState.session?.isKiteUser)) {
+    await loadPortfolioData();
   } else {
     appState.portfolio = null;
     renderPortfolio();
@@ -587,6 +827,11 @@ function routeAppState() {
   const user = appState.session;
   if (!user) {
     showScreen("auth");
+    return;
+  }
+  if (appState.kite?.kite_connected && user.onboardingStep === "kite-connect") {
+    showScreen("transition");
+    setTransitionMessage("Kite connected. Syncing your dashboard...");
     return;
   }
   if (user.onboardingStep === "choose-kite") {
@@ -716,9 +961,13 @@ async function handleKiteConnectAttempt() {
       const proceed = warningText ? window.confirm(`${warningText}\n\nPress OK to continue to Zerodha login.`) : true;
       if (proceed) {
         window.open(payload.connect.login_url, "_blank", "noopener,noreferrer");
+        startKiteStatusPolling();
       }
     }
-    await refreshBootstrap();
+    await refreshBootstrap({ allowAutoKiteSync: false });
+    if (appState.kite?.kite_connected) {
+      await finalizeKiteConnection();
+    }
   } catch (error) {
     if (kiteStatusCard) {
       kiteStatusCard.insertAdjacentHTML(
@@ -795,6 +1044,7 @@ async function startAnalysis(event) {
       query,
       thoughts: thoughtsInput.value.trim(),
       chart_interval: intervalInput.value,
+      agent_preset: agentPresetInput?.value || "auto",
       include_tradingview_snapshot: snapshotInput.checked,
     }),
   });
@@ -804,13 +1054,17 @@ async function startAnalysis(event) {
     addProgressEvent({ kind: "error", step: "validation", message: payload.detail || "Request failed.", progress: 0 });
     return;
   }
+  if (payload.estimate?.label) {
+    setLoadingEstimate(`Estimated time: ${payload.estimate.label}`);
+    if (loadingMessage) loadingMessage.textContent = `Estimated time: ${payload.estimate.label}`;
+    setLoadingOverlayMessage(`This usually takes ${payload.estimate.label}, depending on symbols, charts, and live data speed.`);
+  }
   currentEventSource = new EventSource(`/api/jobs/${payload.job_id}/events`);
   currentEventSource.onmessage = (messageEvent) => {
     const eventPayload = JSON.parse(messageEvent.data);
     if (eventPayload.kind === "terminal") {
       loadingScreen.classList.add("hidden");
       if (eventPayload.status === "completed" && eventPayload.result) {
-        addProgressEvent({ kind: "complete", step: "complete", message: "Research package assembled successfully.", progress: 100 });
         renderResult(eventPayload.result);
       } else {
         addProgressEvent({ kind: "error", step: "terminal", message: eventPayload.error || "Analysis failed.", progress: 100 });
@@ -868,7 +1122,12 @@ kiteNoButton?.addEventListener("click", async () => {
   await completeOnboardingWithDelay("We’re updating market data for your dashboard...");
 });
 kiteConnectButton?.addEventListener("click", handleKiteConnectAttempt);
-kiteRefreshButton?.addEventListener("click", refreshBootstrap);
+kiteRefreshButton?.addEventListener("click", async () => {
+  await refreshBootstrap({ allowAutoKiteSync: false });
+  if (appState.kite?.kite_connected) {
+    await finalizeKiteConnection();
+  }
+});
 kiteSkipButton?.addEventListener("click", async () => {
   await completeOnboardingWithDelay("Opening the dashboard without portfolio sync...");
 });
@@ -881,6 +1140,16 @@ feedbackFab?.addEventListener("click", () => toggleFeedbackPanel());
 feedbackClose?.addEventListener("click", () => toggleFeedbackPanel(false));
 feedbackSubmit?.addEventListener("click", submitFeedback);
 form?.addEventListener("submit", startAnalysis);
+resultHomeButton?.addEventListener("click", showResearchHome);
+resultSearchForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const query = resultSearchInput?.value.trim();
+  if (!query) return;
+  queryInput.value = query;
+  thoughtsInput.value = "";
+  await startAnalysis(event);
+});
+agentPresetInput?.addEventListener("change", renderAgentHelper);
 
 refreshBootstrap().catch((error) => {
   if (authHelper) authHelper.textContent = error.message || "Unable to bootstrap the app.";

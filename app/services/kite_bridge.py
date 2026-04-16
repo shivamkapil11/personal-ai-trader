@@ -3,11 +3,13 @@ from __future__ import annotations
 import json
 import re
 from datetime import datetime, timedelta, timezone
+from time import perf_counter
 from typing import Any, Dict, List
 
 import requests
 
 from app.config import settings
+from app.services.activity_log import activity_log
 from app.services.app_state import app_state_store, utc_now
 
 LOGIN_REQUIRED_TEXT = "Please log in first using the login tool"
@@ -154,6 +156,7 @@ class KiteBridge:
         if self._session_is_fresh(connection):
             return connection
 
+        started = perf_counter()
         profile_result = self.client.call_tool(connection["mcpSessionId"], "get_profile", {})
         if profile_result["ok"] and isinstance(profile_result.get("data"), dict):
             refreshed = app_state_store.upsert_kite_connection(
@@ -167,6 +170,16 @@ class KiteBridge:
                 lastValidatedAt=utc_now(),
             )
             app_state_store.update_user_fields(user["uid"], kiteConnected=True, onboardingStep="dashboard")
+            activity_log.write(
+                "kite",
+                "status_refresh",
+                status="success",
+                message="Kite session validated successfully.",
+                user_id=user["uid"],
+                route="/api/kite/status",
+                duration_ms=int((perf_counter() - started) * 1000),
+                details={"session_status": "connected"},
+            )
             return refreshed
 
         profile_text = profile_result.get("text", "")
@@ -182,6 +195,16 @@ class KiteBridge:
             lastValidatedAt=utc_now(),
         )
         app_state_store.update_user_fields(user["uid"], kiteConnected=False)
+        activity_log.write(
+            "kite",
+            "status_refresh",
+            status="warning" if status == "auth_required" else "error",
+            message=refreshed.get("lastError", "") or "Kite session needs attention.",
+            user_id=user["uid"],
+            route="/api/kite/status",
+            duration_ms=int((perf_counter() - started) * 1000),
+            details={"session_status": status},
+        )
         return refreshed
 
     def status(self, user: Dict[str, Any] | None = None) -> Dict[str, Any]:
@@ -239,6 +262,7 @@ class KiteBridge:
         if not self._bridge_ready():
             return {"available": False, "message": "Kite MCP is not enabled in configuration."}
 
+        started = perf_counter()
         session_id, existing = self._ensure_user_session(user)
         if not session_id:
             session_id = self._create_ephemeral_session()
@@ -253,6 +277,15 @@ class KiteBridge:
                 lastValidatedAt=utc_now(),
             )
             app_state_store.update_user_fields(user["uid"], kiteConnected=False)
+            activity_log.write(
+                "kite",
+                "connect_start",
+                status="error",
+                message=login_result.get("error") or login_result.get("text", "Unable to start Kite login."),
+                user_id=user["uid"],
+                route="/api/kite/connect",
+                duration_ms=int((perf_counter() - started) * 1000),
+            )
             return {
                 "available": False,
                 "message": login_result.get("error") or login_result.get("text", "Unable to start Kite login."),
@@ -275,6 +308,16 @@ class KiteBridge:
             app_state_store.update_user_fields(user["uid"], kiteConnected=True, onboardingStep="dashboard")
         else:
             app_state_store.update_user_fields(user["uid"], kiteConnected=False)
+        activity_log.write(
+            "kite",
+            "connect_start",
+            status="success",
+            message="Kite login flow initialized." if status != "connected" else "Kite was already connected.",
+            user_id=user["uid"],
+            route="/api/kite/connect",
+            duration_ms=int((perf_counter() - started) * 1000),
+            details={"session_status": status, "has_login_url": bool(saved.get("loginUrl", ""))},
+        )
 
         return {
             "available": True,
@@ -309,6 +352,7 @@ class KiteBridge:
     def get_quotes(self, instruments: List[str], user: Dict[str, Any] | None = None) -> Dict[str, Any]:
         if not user:
             return {"available": False, "message": "Please connect Kite to use live quotes."}
+        started = perf_counter()
         session_id, connection = self._ensure_user_session(user)
         if not session_id:
             return {"available": False, "message": "Connect Kite before requesting live quotes."}
@@ -318,7 +362,25 @@ class KiteBridge:
         try:
             result = self.client.call_tool(session_id, "get_quotes", {"instruments": instruments})
             if not result["ok"]:
+                activity_log.write(
+                    "kite",
+                    "get_quotes",
+                    status="error",
+                    message=result.get("error") or result.get("text", "Kite quote lookup failed."),
+                    user_id=user["uid"],
+                    duration_ms=int((perf_counter() - started) * 1000),
+                    details={"instruments": instruments},
+                )
                 return {"available": False, "message": result.get("error") or result.get("text", "Kite quote lookup failed.")}
+            activity_log.write(
+                "kite",
+                "get_quotes",
+                status="success",
+                message=f"Loaded live quotes for {len(instruments)} instruments.",
+                user_id=user["uid"],
+                duration_ms=int((perf_counter() - started) * 1000),
+                details={"instruments": instruments},
+            )
             return {"available": True, "payload": result.get("data") or {}, "message": result.get("text", "")}
         except Exception as exc:  # pragma: no cover - network guard
             return {"available": False, "message": f"Kite quote lookup failed: {exc}"}
@@ -326,6 +388,7 @@ class KiteBridge:
     def get_holdings(self, user: Dict[str, Any] | None = None) -> Dict[str, Any]:
         if not user:
             return {"available": False, "message": "Please log in first."}
+        started = perf_counter()
         session_id, connection = self._ensure_user_session(user)
         if not session_id:
             return {"available": False, "message": "Connect Kite before requesting holdings."}
@@ -335,7 +398,23 @@ class KiteBridge:
         try:
             result = self.client.call_tool(session_id, "get_holdings", {})
             if not result["ok"]:
+                activity_log.write(
+                    "kite",
+                    "get_holdings",
+                    status="error",
+                    message=result.get("error") or result.get("text", "Could not load Kite holdings."),
+                    user_id=user["uid"],
+                    duration_ms=int((perf_counter() - started) * 1000),
+                )
                 return {"available": False, "message": result.get("error") or result.get("text", "Could not load Kite holdings.")}
+            activity_log.write(
+                "kite",
+                "get_holdings",
+                status="success",
+                message="Loaded Kite holdings.",
+                user_id=user["uid"],
+                duration_ms=int((perf_counter() - started) * 1000),
+            )
             return {"available": True, "payload": result.get("data") or {}, "message": result.get("text", "")}
         except Exception as exc:  # pragma: no cover - network guard
             return {"available": False, "message": f"Could not load Kite holdings: {exc}"}
@@ -343,6 +422,7 @@ class KiteBridge:
     def get_positions(self, user: Dict[str, Any] | None = None) -> Dict[str, Any]:
         if not user:
             return {"available": False, "message": "Please log in first."}
+        started = perf_counter()
         session_id, connection = self._ensure_user_session(user)
         if not session_id:
             return {"available": False, "message": "Connect Kite before requesting positions."}
@@ -352,7 +432,23 @@ class KiteBridge:
         try:
             result = self.client.call_tool(session_id, "get_positions", {})
             if not result["ok"]:
+                activity_log.write(
+                    "kite",
+                    "get_positions",
+                    status="error",
+                    message=result.get("error") or result.get("text", "Could not load Kite positions."),
+                    user_id=user["uid"],
+                    duration_ms=int((perf_counter() - started) * 1000),
+                )
                 return {"available": False, "message": result.get("error") or result.get("text", "Could not load Kite positions.")}
+            activity_log.write(
+                "kite",
+                "get_positions",
+                status="success",
+                message="Loaded Kite positions.",
+                user_id=user["uid"],
+                duration_ms=int((perf_counter() - started) * 1000),
+            )
             return {"available": True, "payload": result.get("data") or {}, "message": result.get("text", "")}
         except Exception as exc:  # pragma: no cover - network guard
             return {"available": False, "message": f"Could not load Kite positions: {exc}"}

@@ -1,0 +1,76 @@
+{
+  "presets": [
+    {
+      "id": "auto",
+      "label": "Auto Select",
+      "description": "Choose the best local research agent based on the prompt and notes.",
+      "best_for": ["general research", "mixed prompts", "quick compare runs"],
+      "focus_areas": [],
+      "trigger_keywords": [],
+      "workflow": ["Read the prompt", "Infer the strongest lens", "Run the matching research style"],
+      "tone": "green",
+      "safe_local_only": true,
+      "vibe_inspired_from": "routing"
+    },
+    {
+      "id": "investment_committee",
+      "label": "Investment Committee",
+      "description": "Best for balanced long-term calls, compare runs, and final decision framing.",
+      "best_for": ["compare requests", "long-term investing", "final decision"],
+      "focus_areas": ["fundamentals", "business_quality", "management", "valuation", "risk"],
+      "trigger_keywords": ["compare", "best stock", "long term", "investment", "conviction", "which one", "1 year", "2 year", "3 year"],
+      "workflow": ["Bull case", "Bear case", "Risk review", "Final call"],
+      "tone": "green",
+      "safe_local_only": true,
+      "vibe_inspired_from": "investment_committee"
+    },
+    {
+      "id": "technical_analysis_panel",
+      "label": "Technical Panel",
+      "description": "Best for swing trades, breakouts, timing, momentum, and clean entries.",
+      "best_for": ["swing trades", "entry timing", "breakout setups"],
+      "focus_areas": ["technicals", "risk", "news"],
+      "trigger_keywords": ["swing", "trade", "trading", "breakout", "breakdown", "rsi", "macd", "stochastic", "ema", "support", "resistance", "momentum"],
+      "workflow": ["Trend read", "Momentum check", "Support and resistance", "Trigger and invalidation"],
+      "tone": "yellow",
+      "safe_local_only": true,
+      "vibe_inspired_from": "technical_analysis_panel"
+    },
+    {
+      "id": "earnings_research_desk",
+      "label": "Earnings Desk",
+      "description": "Best for quarterly result reads, revisions, margin change, and event-driven research.",
+      "best_for": ["results season", "earnings reactions", "management commentary"],
+      "focus_areas": ["fundamentals", "news", "management", "risk"],
+      "trigger_keywords": ["earnings", "results", "quarterly", "q1", "q2", "q3", "q4", "guidance", "commentary", "management commentary"],
+      "workflow": ["Numbers check", "Narrative shift", "Trigger analysis", "Expectation gap"],
+      "tone": "green",
+      "safe_local_only": true,
+      "vibe_inspired_from": "earnings_research_desk"
+    },
+    {
+      "id": "risk_committee",
+      "label": "Risk Committee",
+      "description": "Best when downside protection, capital preservation, and concentration risk matter most.",
+      "best_for": ["avoid/watchlist calls", "downside review", "portfolio risk"],
+      "focus_areas": ["risk", "valuation", "fundamentals"],
+      "trigger_keywords": ["risk", "downside", "avoid", "watchlist", "safer", "safe", "drawdown", "capital preservation", "concentration"],
+      "workflow": ["Downside case", "Balance sheet stress", "Valuation risk", "Monitoring triggers"],
+      "tone": "red",
+      "safe_local_only": true,
+      "vibe_inspired_from": "risk_committee"
+    },
+    {
+      "id": "sector_scout",
+      "label": "Sector Scout",
+      "description": "Best for themes, industry mapping, and finding candidate stocks from a sector or trend.",
+      "best_for": ["sector mapping", "industry ideas", "theme discovery"],
+      "focus_areas": ["sector", "business_quality", "news", "fundamentals"],
+      "trigger_keywords": ["sector", "industry", "theme", "tailwind", "tailwinds", "nuclear", "solar", "defence", "banking", "pharma", "which stocks"],
+      "workflow": ["Map the theme", "List candidates", "Compare fit", "Flag what to monitor"],
+      "tone": "yellow",
+      "safe_local_only": true,
+      "vibe_inspired_from": "global_equities_desk"
+    }
+  ]
+}

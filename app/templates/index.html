@@ -300,7 +300,7 @@
             </p>
             <div id="kite-status-card" class="status-board"></div>
             <div class="flow-actions">
-              <button id="kite-connect-button" class="primary-button" type="button">Connect Kite</button>
+              <button id="kite-connect-button" class="primary-button" type="button">Connect and sync</button>
               <button id="kite-refresh-button" class="secondary-button" type="button">Refresh status</button>
               <button id="kite-skip-button" class="secondary-button" type="button">Skip for now</button>
             </div>
@@ -330,8 +330,8 @@
         <div class="transition-card glass-card">
           <div class="loader-ring"></div>
           <p class="eyebrow">Preparing Dashboard</p>
-          <h2>We’re updating market data for your dashboard...</h2>
-          <p id="transition-helper" class="muted">Setting up your workspace and loading the current provider stack.</p>
+          <h2>We’re getting your dashboard ready...</h2>
+          <p id="transition-helper" class="muted">Setting up the workspace, confirming provider status, and syncing portfolio context if available.</p>
         </div>
       </section>
 
@@ -374,7 +374,7 @@
               <span class="eyebrow">Command Center</span>
               <span id="dashboard-session-pill" class="status-chip chip-green">Session live</span>
             </div>
-            <h1>Search, compare, and monitor ideas with less noise and better structure.</h1>
+            <h1>Research faster, compare cleaner, and keep the signal up front.</h1>
             <p id="dashboard-source-note" class="hero-text">
               Provider visibility, stock intelligence, and portfolio context stay in one clean workflow.
             </p>
@@ -395,8 +395,8 @@
           </div>
 
           <div class="hero-secondary glass-card">
-            <p class="eyebrow">Progress Feel</p>
-            <h3>What this workspace is optimized for</h3>
+            <p class="eyebrow">Workspace Focus</p>
+            <h3>What this dashboard is optimized for</h3>
             <div class="level-rail">
               <div class="level-node active">Search</div>
               <div class="level-node active">Compare</div>
@@ -416,11 +416,11 @@
                 <strong>Books + source tags</strong>
               </div>
               <div class="mini-dashboard-card">
-                <span>Future</span>
-                <strong>Watchlists, settings, journal</strong>
+                  <span>Flow</span>
+                  <strong>Search, compare, then monitor</strong>
+                </div>
               </div>
             </div>
-          </div>
         </section>
 
         <main class="workspace-grid">
@@ -429,7 +429,7 @@
               <div class="section-title">
                 <div>
                   <p class="eyebrow">Search Engine</p>
-                  <h2>Start with a symbol, a compare set, or a rough thought.</h2>
+                  <h2>Start with a stock, compare set, or rough thought.</h2>
                 </div>
                 <span class="status-chip chip-yellow">Prompt-aware</span>
               </div>
@@ -457,6 +457,15 @@
 
                 <div class="form-toolbar">
                   <label class="field compact">
+                    <span>Research agent</span>
+                    <select id="agent-preset" name="agent_preset">
+                      {% for preset in agent_summary.selectable %}
+                      <option value="{{ preset.id }}">{{ preset.label }}</option>
+                      {% endfor %}
+                    </select>
+                  </label>
+
+                  <label class="field compact">
                     <span>Chart interval</span>
                     <select id="chart-interval" name="chart_interval">
                       <option value="D">Daily</option>
@@ -471,6 +480,10 @@
                     <input id="include-snapshot" type="checkbox" checked />
                     <span>Try TradingView snapshot</span>
                   </label>
+                </div>
+
+                <div id="agent-helper" class="agent-helper muted">
+                  Auto Select will choose the best local research agent based on your wording.
                 </div>
 
                 <div class="preset-row">
@@ -489,16 +502,16 @@
 
             <section class="insight-band">
               <div class="band-card glass-card">
+                <p class="eyebrow">Local Agents</p>
+                <div id="agent-panel" class="band-copy">{{ agent_summary.count }} research agents are available for different stock-analysis workflows.</div>
+              </div>
+              <div class="band-card glass-card">
                 <p class="eyebrow">Live Source Visibility</p>
                 <div id="market-data-panel" class="band-copy">The current provider chain and fallback behavior will appear here.</div>
               </div>
               <div class="band-card glass-card">
-                <p class="eyebrow">Future Modules</p>
-                <div class="placeholder-pills">
-                  <span class="nav-pill">Catalyst Radar</span>
-                  <span class="nav-pill">Idea Journal</span>
-                  <span class="nav-pill">Screeners Lab</span>
-                </div>
+                <p class="eyebrow">Run Timing</p>
+                <div class="band-copy">Single-stock runs usually finish faster. Multi-stock compares with TradingView snapshots can take longer, so the feed shows a live estimate before each run.</div>
               </div>
             </section>
           </section>
@@ -508,11 +521,11 @@
               <div class="section-title">
                 <div>
                   <p class="eyebrow">Portfolio</p>
-                  <h3>Personalized insights</h3>
+                  <h3>Portfolio sync</h3>
                 </div>
                 <button id="side-connect-kite-button" class="secondary-button small-button" type="button">Connect</button>
               </div>
-              <div id="portfolio-panel" class="module-body muted">Portfolio insights will appear here once Kite holdings become available.</div>
+              <div id="portfolio-panel" class="module-body muted">Portfolio sync status and holdings insights will appear here once Kite is connected.</div>
             </div>
 
             <div class="panel-card glass-card">
@@ -564,17 +577,27 @@
             </div>
             <div class="progress-stage-copy">
               <strong id="loading-message">Waiting to start...</strong>
-              <span>Signals update as the run advances.</span>
+              <span id="progress-estimate">Signals update as the run advances.</span>
             </div>
             <ul id="progress-log" class="progress-log"></ul>
           </aside>
 
-          <section id="result-board" class="result-board empty-state">
+          <section class="result-column">
+            <div id="result-toolbar" class="result-toolbar glass-card hidden">
+              <button id="result-home-button" class="secondary-button small-button" type="button">Home</button>
+              <form id="result-search-form" class="result-search-form">
+                <input id="result-search-input" type="text" placeholder="Search another stock or compare set" />
+                <button class="primary-button small-button" type="submit">Search</button>
+              </form>
+            </div>
+
+            <section id="result-board" class="result-board empty-state">
             <div class="empty-card glass-card">
               <p class="eyebrow">Ready</p>
               <h2>No research package yet</h2>
               <p>Run a ticker or compare set and the dashboard will fill with scores, charts, technicals, fundamentals, risk notes, and decision tags.</p>
             </div>
+            </section>
           </section>
         </section>
       </section>
@@ -605,6 +628,7 @@
         <p class="eyebrow">Live Run</p>
         <h2>Building your stock dashboard</h2>
         <p id="loading-overlay-message">Waiting to start...</p>
+        <p id="loading-estimate" class="muted loading-estimate"></p>
       </div>
     </div>
 

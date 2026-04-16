@@ -13,6 +13,13 @@ def _as_bool(value: str | None, default: bool) -> bool:
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _path_from_env(name: str, default: Path) -> Path:
+    raw = os.getenv(name)
+    if raw is None or not raw.strip():
+        return default
+    return Path(raw.strip())
+
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 load_dotenv(PROJECT_ROOT / ".env")
 
@@ -25,6 +32,7 @@ class Settings:
     app_secret: str
     app_state_path: Path
     knowledge_registry_path: Path
+    activity_log_path: Path
     postgres_enabled: bool
     postgres_dsn: str
     postgres_migrations_path: Path
@@ -44,6 +52,7 @@ class Settings:
     firebase_app_id: str
     firebase_measurement_id: str
     firebase_admin_credentials_path: Path
+    firebase_admin_credentials_json: str
     auth_allow_dev_fallback: bool
     feedback_firestore_enabled: bool
     feedback_firestore_collection: str
@@ -69,6 +78,7 @@ def get_settings() -> Settings:
     kite_repo_default = PROJECT_ROOT.parent / "kite-mcp-server"
     data_default = PROJECT_ROOT / "data" / "app_state.json"
     knowledge_default = PROJECT_ROOT / "data" / "knowledge_registry.json"
+    activity_log_default = PROJECT_ROOT / "data" / "logs" / "activity.jsonl"
     migrations_default = PROJECT_ROOT / "infrastructure" / "postgres" / "migrations"
     width = os.getenv("TRADINGVIEW_WINDOW_WIDTH", "1400")
     height = os.getenv("TRADINGVIEW_WINDOW_HEIGHT", "1400")
@@ -83,16 +93,17 @@ def get_settings() -> Settings:
         app_host=os.getenv("APP_HOST", "127.0.0.1"),
         app_port=int(os.getenv("APP_PORT", "8008")),
         app_secret=os.getenv("APP_SECRET", "local-stock-dashboard-secret").strip(),
-        app_state_path=Path(os.getenv("APP_STATE_PATH", str(data_default))),
-        knowledge_registry_path=Path(os.getenv("KNOWLEDGE_REGISTRY_PATH", str(knowledge_default))),
+        app_state_path=_path_from_env("APP_STATE_PATH", data_default),
+        knowledge_registry_path=_path_from_env("KNOWLEDGE_REGISTRY_PATH", knowledge_default),
+        activity_log_path=_path_from_env("ACTIVITY_LOG_PATH", activity_log_default),
         postgres_enabled=_as_bool(os.getenv("POSTGRES_ENABLED"), False),
         postgres_dsn=os.getenv("POSTGRES_DSN", "").strip(),
-        postgres_migrations_path=Path(os.getenv("POSTGRES_MIGRATIONS_PATH", str(migrations_default))),
+        postgres_migrations_path=_path_from_env("POSTGRES_MIGRATIONS_PATH", migrations_default),
         market_data_provider_order=provider_order or ("kite_mcp", "jugaad_data", "yfinance"),
         kite_mcp_enabled=_as_bool(os.getenv("KITE_MCP_ENABLED"), True),
         kite_mcp_mode=os.getenv("KITE_MCP_MODE", "hosted").strip().lower() or "hosted",
         kite_mcp_url=os.getenv("KITE_MCP_URL", "https://mcp.kite.trade/mcp").strip(),
-        kite_mcp_repo_path=Path(os.getenv("KITE_MCP_REPO_PATH", str(kite_repo_default))),
+        kite_mcp_repo_path=_path_from_env("KITE_MCP_REPO_PATH", kite_repo_default),
         kite_mcp_bridge_base_url=os.getenv("KITE_MCP_BRIDGE_BASE_URL", "").strip(),
         kite_mcp_bridge_api_key=os.getenv("KITE_MCP_BRIDGE_API_KEY", "").strip(),
         firebase_enabled=_as_bool(os.getenv("FIREBASE_ENABLED"), False),
@@ -104,6 +115,7 @@ def get_settings() -> Settings:
         firebase_app_id=os.getenv("FIREBASE_APP_ID", "").strip(),
         firebase_measurement_id=os.getenv("FIREBASE_MEASUREMENT_ID", "").strip(),
         firebase_admin_credentials_path=Path(os.getenv("FIREBASE_ADMIN_CREDENTIALS_PATH", "")),
+        firebase_admin_credentials_json=os.getenv("FIREBASE_ADMIN_CREDENTIALS_JSON", "").strip(),
         auth_allow_dev_fallback=_as_bool(os.getenv("AUTH_ALLOW_DEV_FALLBACK"), True),
         feedback_firestore_enabled=_as_bool(os.getenv("FEEDBACK_FIRESTORE_ENABLED"), False),
         feedback_firestore_collection=os.getenv("FEEDBACK_FIRESTORE_COLLECTION", "feedback"),
@@ -111,10 +123,8 @@ def get_settings() -> Settings:
         feedback_firestore_credentials_path=Path(os.getenv("FEEDBACK_FIRESTORE_CREDENTIALS_PATH", "")),
         tradingview_enabled=_as_bool(os.getenv("TRADINGVIEW_ENABLED"), True),
         tradingview_desktop_enabled=_as_bool(os.getenv("TRADINGVIEW_DESKTOP_ENABLED"), True),
-        tradingview_desktop_repo_path=Path(
-            os.getenv("TRADINGVIEW_DESKTOP_REPO_PATH", str(PROJECT_ROOT.parent / "tradingview-mcp"))
-        ),
-        tradingview_repo_path=Path(os.getenv("TRADINGVIEW_REPO_PATH", str(repo_default))),
+        tradingview_desktop_repo_path=_path_from_env("TRADINGVIEW_DESKTOP_REPO_PATH", PROJECT_ROOT.parent / "tradingview-mcp"),
+        tradingview_repo_path=_path_from_env("TRADINGVIEW_REPO_PATH", repo_default),
         tradingview_session_id=os.getenv("TRADINGVIEW_SESSION_ID", "").strip(),
         tradingview_session_id_sign=os.getenv("TRADINGVIEW_SESSION_ID_SIGN", "").strip(),
         tradingview_headless=_as_bool(os.getenv("TRADINGVIEW_HEADLESS"), True),

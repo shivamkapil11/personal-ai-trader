@@ -78,7 +78,7 @@ FIREBASE_API_KEY=<firebase-client-key>
 FIREBASE_AUTH_DOMAIN=<firebase-auth-domain>
 FIREBASE_PROJECT_ID=<firebase-project-id>
 FIREBASE_APP_ID=<firebase-app-id>
-FIREBASE_ADMIN_CREDENTIALS_PATH=<path-or-mounted-secret>
+FIREBASE_ADMIN_CREDENTIALS_JSON=<service-account-json>
 FEEDBACK_FIRESTORE_ENABLED=true
 FEEDBACK_FIRESTORE_COLLECTION=feedback
 POSTGRES_ENABLED=true
@@ -164,7 +164,7 @@ Check:
 
 - Firebase client keys
 - Firebase auth domain allow-list
-- Firebase admin credentials or token verification path
+- Firebase admin credentials JSON or token verification path
 - cookie settings if HTTPS-only handling changes later
 
 ### Portfolio insights never load

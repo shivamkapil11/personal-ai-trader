@@ -212,6 +212,11 @@ p {
   color: #ffe3a7;
 }
 
+.mini-badge.tone-red {
+  background: var(--danger-soft);
+  color: #ffc4c4;
+}
+
 .button-link {
   display: inline-flex;
   align-items: center;
@@ -648,7 +653,8 @@ p {
 
 .workspace-main,
 .dashboard-sidebar,
-.results-shell {
+.results-shell,
+.result-column {
   display: grid;
   gap: 18px;
 }
@@ -698,6 +704,11 @@ select {
 .compact {
   min-width: 220px;
   max-width: 280px;
+}
+
+.agent-helper {
+  margin-top: -4px;
+  font-size: 0.92rem;
 }
 
 .toggle-field {
@@ -762,7 +773,7 @@ select {
 
 .insight-band {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 18px;
 }
 
@@ -825,6 +836,13 @@ select {
   font-size: 0.86rem;
 }
 
+.progress-event-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .progress-log {
   list-style: none;
   margin: 0;
@@ -863,12 +881,38 @@ select {
   gap: 18px;
 }
 
+.result-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 22px;
+}
+
+.result-search-form {
+  flex: 1;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.result-search-form input {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--ink);
+  padding: 0 18px;
+}
+
 .empty-state {
   display: block;
 }
 
 .empty-card,
 .compare-section,
+.agent-section,
 .brief-section,
 .stock-card {
   display: grid;
@@ -957,6 +1001,20 @@ select {
   gap: 8px;
 }
 
+.module-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.compact-note {
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.compact-grid {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
 .status-board {
   display: grid;
   gap: 16px;
@@ -1014,6 +1072,23 @@ select {
 .loading-card {
   width: min(460px, calc(100vw - 32px));
   text-align: center;
+}
+
+.loading-estimate {
+  margin-top: 10px;
+}
+
+body[data-result-view="focused"] .workspace-grid,
+body[data-result-view="focused"] .progress-panel {
+  display: none;
+}
+
+body[data-result-view="focused"] .results-shell {
+  grid-template-columns: 1fr;
+}
+
+body[data-result-view="focused"] .dashboard-hero {
+  display: none;
 }
 
 @keyframes spin {
@@ -1107,7 +1182,8 @@ select {
   .flow-actions,
   .feedback-actions,
   .action-row,
-  .form-toolbar {
+  .form-toolbar,
+  .result-search-form {
     flex-direction: column;
     align-items: stretch;
   }

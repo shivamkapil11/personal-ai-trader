@@ -83,13 +83,28 @@ def firebase_backend_ready() -> bool:
     )
 
 
+def _firebase_admin_credentials_from_env() -> Dict[str, Any] | None:
+    raw = settings.firebase_admin_credentials_json.strip()
+    if not raw:
+        return None
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        return None
+
+
 def firebase_admin_ready() -> bool:
     configured_path = str(settings.firebase_admin_credentials_path).strip()
     return (
         firebase_admin is not None
-        and configured_path not in {"", ".", "./"}
-        and Path(settings.firebase_admin_credentials_path).exists()
-        and Path(settings.firebase_admin_credentials_path).is_file()
+        and (
+            _firebase_admin_credentials_from_env() is not None
+            or (
+                configured_path not in {"", ".", "./"}
+                and Path(settings.firebase_admin_credentials_path).exists()
+                and Path(settings.firebase_admin_credentials_path).is_file()
+            )
+        )
     )
 
 
@@ -98,14 +113,18 @@ def _ensure_firebase_admin() -> None:
         return
     if firebase_admin._apps:  # type: ignore[attr-defined]
         return
-    credential = firebase_credentials.Certificate(str(settings.firebase_admin_credentials_path))
+    inline_credentials = _firebase_admin_credentials_from_env()
+    credential = firebase_credentials.Certificate(inline_credentials or str(settings.firebase_admin_credentials_path))
     firebase_admin.initialize_app(credential)  # type: ignore[union-attr]
 
 
 def verify_google_session(payload: Dict[str, Any]) -> Dict[str, Any]:
     if payload.get("id_token") and firebase_admin_ready():
-        _ensure_firebase_admin()
-        decoded = firebase_auth.verify_id_token(payload["id_token"])  # type: ignore[union-attr]
+        try:
+            _ensure_firebase_admin()
+            decoded = firebase_auth.verify_id_token(payload["id_token"])  # type: ignore[union-attr]
+        except Exception as exc:
+            raise ValueError(f"Firebase could not verify the Google sign-in token: {exc}") from exc
         return {
             "uid": decoded["uid"],
             "name": decoded.get("name") or payload.get("name") or "Gains user",
@@ -126,6 +145,30 @@ def verify_google_session(payload: Dict[str, Any]) -> Dict[str, Any]:
         }
 
     raise ValueError("Firebase backend verification is not configured yet.")
+
+
+def _firebase_missing_bits() -> list[str]:
+    missing: list[str] = []
+    if not settings.firebase_api_key:
+        missing.append("FIREBASE_API_KEY")
+    if not settings.firebase_auth_domain:
+        missing.append("FIREBASE_AUTH_DOMAIN")
+    if not settings.firebase_project_id:
+        missing.append("FIREBASE_PROJECT_ID")
+    if not settings.firebase_app_id:
+        missing.append("FIREBASE_APP_ID")
+    if not settings.firebase_storage_bucket:
+        missing.append("FIREBASE_STORAGE_BUCKET")
+    if not settings.firebase_messaging_sender_id:
+        missing.append("FIREBASE_MESSAGING_SENDER_ID")
+    if not firebase_admin_ready():
+        missing.append("FIREBASE_ADMIN_CREDENTIALS_PATH or FIREBASE_ADMIN_CREDENTIALS_JSON")
+    return missing
+
+
+def request_is_secure(request: Request) -> bool:
+    forwarded_proto = request.headers.get("x-forwarded-proto", "")
+    return request.url.scheme == "https" or forwarded_proto.lower() == "https"
 
 
 def create_session_cookie(user: Dict[str, Any]) -> str:
@@ -160,6 +203,7 @@ def bootstrap_auth_state(request: Request) -> Dict[str, Any]:
         "firebase_enabled": settings.firebase_enabled,
         "firebase_backend_ready": firebase_backend_ready(),
         "firebase_admin_ready": firebase_admin_ready(),
+        "firebase_missing": _firebase_missing_bits() if settings.firebase_enabled else [],
         "allow_dev_fallback": settings.auth_allow_dev_fallback,
         "firebase_client_config": _firebase_client_config(),
         "session": get_session_from_request(request),
@@ -171,6 +215,7 @@ def auth_status_snapshot() -> Dict[str, Any]:
         "firebase_enabled": settings.firebase_enabled,
         "firebase_backend_ready": firebase_backend_ready(),
         "firebase_admin_ready": firebase_admin_ready(),
+        "firebase_missing": _firebase_missing_bits() if settings.firebase_enabled else [],
         "allow_dev_fallback": settings.auth_allow_dev_fallback,
     }
 

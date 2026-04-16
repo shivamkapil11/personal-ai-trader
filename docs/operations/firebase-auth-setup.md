@@ -48,6 +48,17 @@ FIREBASE_ADMIN_CREDENTIALS_PATH=/absolute/path/to/service-account.json
 AUTH_ALLOW_DEV_FALLBACK=false
 ```
 
+If you plan to deploy on Vercel, use this instead of a file path:
+
+```bash
+FIREBASE_ADMIN_CREDENTIALS_JSON='{"type":"service_account","project_id":"..."}'
+```
+
+You only need one of these:
+
+- `FIREBASE_ADMIN_CREDENTIALS_PATH`
+- `FIREBASE_ADMIN_CREDENTIALS_JSON`
+
 ## Restart and verify
 
 ```bash
@@ -61,9 +72,10 @@ Expected:
 - `auth.firebase_enabled` should be `true`
 - `auth.firebase_backend_ready` should be `true`
 - `auth.firebase_admin_ready` should be `true`
+- `auth.firebase_missing` should be an empty list
 
 ## Production notes
 
 - Add the same Firebase web config values in Vercel project environment variables.
-- Mount or securely provide the Admin SDK JSON to the server runtime.
+- Prefer `FIREBASE_ADMIN_CREDENTIALS_JSON` in Vercel rather than a filesystem path.
 - Add the final production domain to Firebase Auth authorized domains before testing Google login in production.

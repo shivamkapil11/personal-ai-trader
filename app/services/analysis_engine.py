@@ -312,11 +312,15 @@ def build_report(stock: Dict[str, Any], request_context: Dict[str, Any] | None =
     long_term_base = max(8, round(long_term["score"] * 0.32, 1))
     long_term_bull = round(long_term_base + 12, 1)
     long_term_bear = round(-min(18, risks["rating"] * 2.0), 1)
+    selected_agent = (request_context or {}).get("agent", {})
     knowledge_context = knowledge_registry.select(
         focus_areas=(request_context or {}).get("focus_areas", []),
         label=label,
         mode="analysis",
     )
+    knowledge_context["agent"] = selected_agent
+    if selected_agent.get("selection_reason"):
+        decision_reasons = [selected_agent["selection_reason"], *decision_reasons][:4]
 
     return {
         "identity": {
@@ -453,6 +457,8 @@ def build_comparison(reports: List[Dict[str, Any]], request_context: Dict[str, A
     if request_context:
         best_fit = max(reports, key=lambda item: score_prompt_fit(item, request_context))
         summary["best_fit_for_prompt"] = best_fit["identity"]["resolved_symbol"]
+        if request_context.get("agent", {}).get("label"):
+            summary["agent_lens"] = request_context["agent"]["label"]
 
     return {
         "table": table,

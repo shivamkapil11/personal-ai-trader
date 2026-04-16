@@ -37,7 +37,6 @@ class KnowledgeRegistry:
         return {
             "count": len(sources),
             "categories": sorted({source.get("category", "general") for source in sources}),
-            "path": str(self.path),
         }
 
     def select(self, *, focus_areas: List[str] | None = None, label: str | None = None, mode: str = "analysis") -> Dict[str, Any]:
