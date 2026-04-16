@@ -1,0 +1,114 @@
+{
+  "sources": [
+    {
+      "id": "gains-product-spec",
+      "title": "Gains Product Specification",
+      "category": "product",
+      "path": "docs/product/gains-product-spec.md",
+      "tags": ["analysis", "portfolio", "product", "dashboard", "ui"],
+      "principles": [
+        "Show the summary first and let deeper detail unfold progressively.",
+        "Keep the primary action centered around fast stock search and immediate decision support."
+      ]
+    },
+    {
+      "id": "integrated-playbook",
+      "title": "Stock Research Playbook",
+      "category": "framework",
+      "path": "docs/research/stock-research-playbook.md",
+      "tags": ["analysis", "portfolio", "fundamentals", "technicals", "risk"],
+      "principles": [
+        "Separate business quality, valuation, and timing so the decision framework stays honest.",
+        "Distinguish confirmed market data from inference and scenario planning."
+      ]
+    },
+    {
+      "id": "intelligent-investor",
+      "title": "The Intelligent Investor",
+      "category": "book",
+      "path": "local-library/THE-INTELLIGENT-INVESTOR.pdf",
+      "tags": ["analysis", "portfolio", "fundamentals", "valuation", "long-term-investment"],
+      "principles": [
+        "Require a margin of safety before treating a stock as a high-conviction investment.",
+        "Treat preservation of capital as important as upside."
+      ]
+    },
+    {
+      "id": "common-stocks",
+      "title": "Common Stocks and Uncommon Profits",
+      "category": "book",
+      "path": "local-library/common_stocks_and_uncommon_profits_and_other_writings.pdf",
+      "tags": ["analysis", "fundamentals", "business_quality", "management", "long-term-investment"],
+      "principles": [
+        "Management quality and durable competitive advantage should influence long-term conviction.",
+        "Strong businesses deserve a different lens than short-term trades."
+      ]
+    },
+    {
+      "id": "one-up",
+      "title": "One Up On Wall Street",
+      "category": "book",
+      "path": "local-library/one_up_on_wall_street.pdf",
+      "tags": ["analysis", "fundamentals", "sector", "long-term-investment"],
+      "principles": [
+        "Use understandable businesses and runway as a filter for multi-year ideas.",
+        "Look for practical edge, not abstract complexity."
+      ]
+    },
+    {
+      "id": "mastering-the-trade",
+      "title": "Mastering the Trade",
+      "category": "book",
+      "path": "local-library/mastering-the-trade.pdf",
+      "tags": ["analysis", "technicals", "swing-trade", "risk"],
+      "principles": [
+        "A swing setup needs a defined trigger, stop, and reward profile.",
+        "Momentum without risk definition is not enough."
+      ]
+    },
+    {
+      "id": "japanese-candlesticks",
+      "title": "Japanese Candlestick Charting Techniques",
+      "category": "book",
+      "path": "local-library/japanese-candlestick-charting-techniques.pdf",
+      "tags": ["analysis", "technicals", "swing-trade"],
+      "principles": [
+        "Price structure and reversal confirmation should support the trade idea.",
+        "Single candles are weaker than structure plus confirmation."
+      ]
+    },
+    {
+      "id": "technical-analysis-murphy",
+      "title": "Technical Analysis of the Financial Markets",
+      "category": "book",
+      "path": "local-library/technical_analysis_of_the_financial_markets.pdf",
+      "tags": ["analysis", "technicals", "swing-trade", "portfolio"],
+      "principles": [
+        "Trend, momentum, and volume should be read together rather than in isolation.",
+        "Support and resistance matter most when multiple signals align."
+      ]
+    },
+    {
+      "id": "random-walk",
+      "title": "A Random Walk Down Wall Street",
+      "category": "book",
+      "path": "local-library/a-random-walk-down-wall-street.pdf",
+      "tags": ["analysis", "portfolio", "risk", "diversification"],
+      "principles": [
+        "Diversification and benchmark awareness should influence portfolio design.",
+        "Be skeptical of overconfident forecasts."
+      ]
+    },
+    {
+      "id": "reminiscences",
+      "title": "Reminiscences of a Stock Operator",
+      "category": "book",
+      "path": "local-library/reminiscences_of_a_stock_operator.pdf",
+      "tags": ["analysis", "swing-trade", "risk", "behavior"],
+      "principles": [
+        "Respect market behavior and avoid forcing trades.",
+        "Position sizing and patience matter as much as the idea itself."
+      ]
+    }
+  ]
+}

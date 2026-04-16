@@ -22,11 +22,33 @@ class Settings:
     app_title: str
     app_host: str
     app_port: int
+    app_secret: str
+    app_state_path: Path
+    knowledge_registry_path: Path
+    postgres_enabled: bool
+    postgres_dsn: str
+    postgres_migrations_path: Path
     market_data_provider_order: tuple[str, ...]
     kite_mcp_enabled: bool
     kite_mcp_mode: str
     kite_mcp_url: str
     kite_mcp_repo_path: Path
+    kite_mcp_bridge_base_url: str
+    kite_mcp_bridge_api_key: str
+    firebase_enabled: bool
+    firebase_api_key: str
+    firebase_auth_domain: str
+    firebase_project_id: str
+    firebase_storage_bucket: str
+    firebase_messaging_sender_id: str
+    firebase_app_id: str
+    firebase_measurement_id: str
+    firebase_admin_credentials_path: Path
+    auth_allow_dev_fallback: bool
+    feedback_firestore_enabled: bool
+    feedback_firestore_collection: str
+    feedback_firestore_project_id: str
+    feedback_firestore_credentials_path: Path
     tradingview_enabled: bool
     tradingview_desktop_enabled: bool
     tradingview_desktop_repo_path: Path
@@ -45,6 +67,9 @@ class Settings:
 def get_settings() -> Settings:
     repo_default = PROJECT_ROOT.parent / "tradingview-chart-mcp"
     kite_repo_default = PROJECT_ROOT.parent / "kite-mcp-server"
+    data_default = PROJECT_ROOT / "data" / "app_state.json"
+    knowledge_default = PROJECT_ROOT / "data" / "knowledge_registry.json"
+    migrations_default = PROJECT_ROOT / "infrastructure" / "postgres" / "migrations"
     width = os.getenv("TRADINGVIEW_WINDOW_WIDTH", "1400")
     height = os.getenv("TRADINGVIEW_WINDOW_HEIGHT", "1400")
     provider_order_raw = os.getenv("MARKET_DATA_PROVIDER_ORDER", "kite_mcp,jugaad_data,yfinance")
@@ -54,14 +79,36 @@ def get_settings() -> Settings:
         if item.strip()
     )
     return Settings(
-        app_title="Local Stock Research Dashboard",
+        app_title=os.getenv("APP_TITLE", "Gains"),
         app_host=os.getenv("APP_HOST", "127.0.0.1"),
         app_port=int(os.getenv("APP_PORT", "8008")),
+        app_secret=os.getenv("APP_SECRET", "local-stock-dashboard-secret").strip(),
+        app_state_path=Path(os.getenv("APP_STATE_PATH", str(data_default))),
+        knowledge_registry_path=Path(os.getenv("KNOWLEDGE_REGISTRY_PATH", str(knowledge_default))),
+        postgres_enabled=_as_bool(os.getenv("POSTGRES_ENABLED"), False),
+        postgres_dsn=os.getenv("POSTGRES_DSN", "").strip(),
+        postgres_migrations_path=Path(os.getenv("POSTGRES_MIGRATIONS_PATH", str(migrations_default))),
         market_data_provider_order=provider_order or ("kite_mcp", "jugaad_data", "yfinance"),
         kite_mcp_enabled=_as_bool(os.getenv("KITE_MCP_ENABLED"), True),
         kite_mcp_mode=os.getenv("KITE_MCP_MODE", "hosted").strip().lower() or "hosted",
         kite_mcp_url=os.getenv("KITE_MCP_URL", "https://mcp.kite.trade/mcp").strip(),
         kite_mcp_repo_path=Path(os.getenv("KITE_MCP_REPO_PATH", str(kite_repo_default))),
+        kite_mcp_bridge_base_url=os.getenv("KITE_MCP_BRIDGE_BASE_URL", "").strip(),
+        kite_mcp_bridge_api_key=os.getenv("KITE_MCP_BRIDGE_API_KEY", "").strip(),
+        firebase_enabled=_as_bool(os.getenv("FIREBASE_ENABLED"), False),
+        firebase_api_key=os.getenv("FIREBASE_API_KEY", "").strip(),
+        firebase_auth_domain=os.getenv("FIREBASE_AUTH_DOMAIN", "").strip(),
+        firebase_project_id=os.getenv("FIREBASE_PROJECT_ID", "").strip(),
+        firebase_storage_bucket=os.getenv("FIREBASE_STORAGE_BUCKET", "").strip(),
+        firebase_messaging_sender_id=os.getenv("FIREBASE_MESSAGING_SENDER_ID", "").strip(),
+        firebase_app_id=os.getenv("FIREBASE_APP_ID", "").strip(),
+        firebase_measurement_id=os.getenv("FIREBASE_MEASUREMENT_ID", "").strip(),
+        firebase_admin_credentials_path=Path(os.getenv("FIREBASE_ADMIN_CREDENTIALS_PATH", "")),
+        auth_allow_dev_fallback=_as_bool(os.getenv("AUTH_ALLOW_DEV_FALLBACK"), True),
+        feedback_firestore_enabled=_as_bool(os.getenv("FEEDBACK_FIRESTORE_ENABLED"), False),
+        feedback_firestore_collection=os.getenv("FEEDBACK_FIRESTORE_COLLECTION", "feedback"),
+        feedback_firestore_project_id=os.getenv("FEEDBACK_FIRESTORE_PROJECT_ID", "").strip(),
+        feedback_firestore_credentials_path=Path(os.getenv("FEEDBACK_FIRESTORE_CREDENTIALS_PATH", "")),
         tradingview_enabled=_as_bool(os.getenv("TRADINGVIEW_ENABLED"), True),
         tradingview_desktop_enabled=_as_bool(os.getenv("TRADINGVIEW_DESKTOP_ENABLED"), True),
         tradingview_desktop_repo_path=Path(

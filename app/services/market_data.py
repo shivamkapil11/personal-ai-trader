@@ -10,6 +10,7 @@ import pandas as pd
 import yfinance as yf
 
 from app.config import settings
+from app.services.kite_bridge import kite_bridge
 
 try:
     from jugaad_data.nse import NSELive
@@ -219,17 +220,57 @@ def quote_from_jugaad_payload(payload: Dict[str, Any], symbol: str) -> Dict[str,
     }
 
 
-def try_kite_mcp_quote(_query: str, _resolved_symbol: str) -> Tuple[Dict[str, Any] | None, str]:
+def kite_instrument_key(query: str, resolved_symbol: str) -> str:
+    raw = query.strip().upper()
+    if raw.startswith("NSE:") or raw.startswith("BSE:"):
+        return raw
+    base = resolved_symbol.split(".", 1)[0].upper()
+    if resolved_symbol.endswith(".NS"):
+        return f"NSE:{base}"
+    if resolved_symbol.endswith(".BO"):
+        return f"BSE:{base}"
+    return base
+
+
+def quote_from_kite_payload(payload: Dict[str, Any], instrument: str) -> Dict[str, Any] | None:
+    if not isinstance(payload, dict):
+        return None
+    quote = payload.get(instrument) or next(iter(payload.values()), None)
+    if not isinstance(quote, dict):
+        return None
+    ohlc = quote.get("ohlc", {}) if isinstance(quote.get("ohlc"), dict) else {}
+    return {
+        "provider": "kite_mcp",
+        "provider_label": provider_label("kite_mcp"),
+        "instrument": instrument,
+        "company_name": instrument,
+        "current_price": clean_number(quote.get("last_price") or quote.get("lastPrice")),
+        "open": clean_number(ohlc.get("open")),
+        "previous_close": clean_number(ohlc.get("close") or quote.get("close")),
+        "day_high": clean_number(ohlc.get("high")),
+        "day_low": clean_number(ohlc.get("low")),
+        "fifty_two_week_high": None,
+        "fifty_two_week_low": None,
+        "volume": clean_int(quote.get("volume")),
+        "raw": payload,
+    }
+
+
+def try_kite_mcp_quote(query: str, resolved_symbol: str, user: Dict[str, Any] | None = None) -> Tuple[Dict[str, Any] | None, str]:
     if not settings.kite_mcp_enabled:
         return None, "Kite MCP is turned off in configuration."
-    if not settings.kite_mcp_repo_path.exists():
-        return None, f"Kite MCP repo was not found at {settings.kite_mcp_repo_path}."
-    if settings.kite_mcp_mode == "hosted":
-        return None, (
-            "Kite MCP is configured in hosted mode, but dashboard-side OAuth/client bridging is not set up yet. "
-            f"Target endpoint: {settings.kite_mcp_url}"
-        )
-    return None, "Kite MCP self-hosting is prepared, but local Kite credentials and MCP auth are not configured yet."
+    if not settings.kite_mcp_url:
+        return None, "Kite MCP endpoint is not configured."
+    if not user:
+        return None, "Kite MCP is available, but this run is not linked to a connected Kite session."
+    instrument = kite_instrument_key(query, resolved_symbol)
+    result = kite_bridge.get_quotes([instrument], user)
+    if not result.get("available"):
+        return None, result.get("message", "Kite quote lookup is not available.")
+    quote = quote_from_kite_payload(result.get("payload", {}), instrument)
+    if not quote:
+        return None, f"Kite MCP returned a response, but no usable quote was found for {instrument}."
+    return quote, f"Live quote resolved through Kite MCP for {instrument}."
 
 
 def try_jugaad_quote(query: str, resolved_symbol: str) -> Tuple[Dict[str, Any] | None, str]:
@@ -275,11 +316,17 @@ def yfinance_quote(info: Dict[str, Any], history: pd.DataFrame, resolved_symbol:
     return quote, f"Used Yahoo Finance as the market quote source for {resolved_symbol}."
 
 
-def resolve_live_quote(query: str, resolved_symbol: str, info: Dict[str, Any], history: pd.DataFrame) -> Dict[str, Any]:
+def resolve_live_quote(
+    query: str,
+    resolved_symbol: str,
+    info: Dict[str, Any],
+    history: pd.DataFrame,
+    user: Dict[str, Any] | None = None,
+) -> Dict[str, Any]:
     trace: List[Dict[str, Any]] = []
     for provider_id in provider_order():
         if provider_id == "kite_mcp":
-            quote, message = try_kite_mcp_quote(query, resolved_symbol)
+            quote, message = try_kite_mcp_quote(query, resolved_symbol, user)
         elif provider_id == "jugaad_data":
             quote, message = try_jugaad_quote(query, resolved_symbol)
         elif provider_id == "yfinance":
@@ -325,11 +372,11 @@ def market_data_status() -> Dict[str, Any]:
             "id": "kite_mcp",
             "label": provider_label("kite_mcp"),
             "enabled": settings.kite_mcp_enabled,
-            "available": settings.kite_mcp_enabled and settings.kite_mcp_repo_path.exists(),
+            "available": bool(settings.kite_mcp_enabled and (settings.kite_mcp_url or settings.kite_mcp_repo_path.exists())),
             "message": (
-                f"Kite MCP repo detected at {settings.kite_mcp_repo_path}. Hosted endpoint: {settings.kite_mcp_url}"
-                if settings.kite_mcp_repo_path.exists()
-                else f"Clone zerodha/kite-mcp-server into {settings.kite_mcp_repo_path} or use the hosted endpoint {settings.kite_mcp_url}."
+                f"Kite MCP hosted endpoint is set to {settings.kite_mcp_url}."
+                if settings.kite_mcp_url
+                else f"Clone zerodha/kite-mcp-server into {settings.kite_mcp_repo_path} or configure the hosted endpoint."
             ),
         }
     )
@@ -645,13 +692,13 @@ def financial_status(fundamentals: Dict[str, Any]) -> str:
     return "stable"
 
 
-def collect_stock_data(query: str) -> Dict[str, Any]:
+def collect_stock_data(query: str, user: Dict[str, Any] | None = None) -> Dict[str, Any]:
     resolved_symbol, ticker, info, history = resolve_symbol(query)
     benchmark = flatten_history(
         yf.download(benchmark_symbol(resolved_symbol), period="1y", interval="1d", auto_adjust=False, progress=False)
     ).dropna(how="all")
 
-    live_quote = resolve_live_quote(query, resolved_symbol, info, history)
+    live_quote = resolve_live_quote(query, resolved_symbol, info, history, user)
     technicals = apply_live_quote(compute_technicals(history, benchmark), live_quote)
     fundamentals = compute_fundamentals(ticker, info)
     fundamentals["financial_status"] = financial_status(fundamentals)

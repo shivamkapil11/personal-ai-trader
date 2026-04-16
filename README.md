@@ -1,123 +1,123 @@
-# Local Stock Research Dashboard
+# Personal AI Trader
 
-This is a local dashboard for stock research and comparison. It runs on your machine, shows a live loading screen with step-by-step progress updates, supports comparing up to three stocks, and can pull TradingView chart snapshots through either:
+Local-first stock research and decision-support workspace for single-stock analysis, side-by-side comparison, and optional portfolio-aware insights.
 
-- `tradingview-mcp` for the installed TradingView Desktop app
-- `tradingview-chart-mcp` as a browser-cookie fallback
+## What This Product Does
 
-The market-data chain now prefers:
+`Personal AI Trader` helps a user:
 
-- `Kite MCP` first, when configured
-- `jugaad-data` for NSE/BSE public live quotes
-- `yfinance` for history, fundamentals, and headline fallback
+- analyze one stock or compare up to three stocks
+- classify names as swing-trade, long-term, watchlist, or avoid-for-now
+- see provider/source visibility for quotes and market context
+- turn rough notes into a structured analysis brief
+- optionally connect Kite for live portfolio-aware insights
+- keep watchlist items, search history, and feedback in a local-first workflow
 
-## What it does
+The app is designed so stock analysis works even when portfolio connectivity is not enabled.
 
-- single-stock or multi-stock comparison
-- natural-language prompts, company names, or raw ticker input
-- optional free-form thoughts that get auto-structured into a cleaner research brief
-- live research progress feed while analysis runs
-- summary dashboard with swing vs long-term classification
-- technical indicators and price structure
-- fundamentals snapshot and valuation summary
-- recent headline feed from Yahoo Finance
-- an intent layer that infers whether you meant a single-stock run or a side-by-side comparison
-- optional TradingView chart snapshots using the local desktop bridge first, then the cookie-based browser bridge as fallback
-- market data source visibility so you can see which provider fed the live quote
+## Core Capabilities
 
-## Folder layout
+- auth-first flow with Google sign-in and local dev fallback
+- onboarding split for Kite and non-Kite users
+- provider chain: `Kite MCP -> jugaad-data -> Yahoo Finance`
+- technical, fundamental, risk, and return scoring
+- source-tagged reasoning using a knowledge registry
+- optional TradingView Desktop snapshot support
+- portfolio insight flow for holdings, positions, and concentration analysis
 
-- `stock-dashboard/`: this app
-- `kite-mcp-server/`: cloned Zerodha Kite MCP server repo
-- `tradingview-mcp/`: cloned TradingView Desktop bridge repo
-- `tradingview-chart-mcp/`: cloned browser-cookie snapshot repo
+## Recommended Reading Order
 
-## Quick start
+- [Documentation Index](docs/README.md)
+- [Architecture](docs/project/architecture.md)
+- [Deployment Guide](docs/operations/deployment.md)
+- [GoDaddy Domain Setup](docs/operations/domain-setup-godaddy.md)
+- [Roadmap](docs/project/roadmap.md)
+- [ClickUp Update](docs/project/clickup-update.md)
+- [GitHub Desktop Guide](docs/project/github-desktop-guide.md)
+
+## Repository Structure
+
+```text
+personal-ai-trader/
+├── api/                          # Vercel entrypoint
+├── app/
+│   ├── main.py                   # FastAPI app and routes
+│   ├── config.py                 # Environment-driven settings
+│   ├── models.py                 # Request/session models
+│   ├── jobs.py                   # In-memory job/event manager
+│   ├── services/                 # Market data, auth, Kite, portfolio, knowledge
+│   ├── static/                   # Frontend JS and CSS
+│   └── templates/                # Jinja templates
+├── data/                         # Local JSON-backed registry/state assets
+├── docs/                         # Product, architecture, ops, roadmap, repo docs
+├── infrastructure/
+│   └── postgres/migrations/      # SQL scaffolding for future persistent storage
+├── requirements.txt
+├── run_local.sh
+└── vercel.json
+```
+
+## Quick Start
 
 ```bash
-cd /Users/shivamsworld/Documents/OpenAi/stock-dashboard
+git clone <your-private-repo-url>
+cd personal-ai-trader
 cp .env.example .env
-./run_local.sh
+SKIP_PIP_INSTALL=1 ./run_local.sh
 ```
 
-Then open:
+Open [http://127.0.0.1:8008](http://127.0.0.1:8008).
 
-```text
-http://127.0.0.1:8008
-```
+Notes:
 
-## TradingView Desktop bridge
+- Use `SKIP_PIP_INSTALL=1` when the virtual environment is already prepared.
+- Set `APP_RELOAD=1` if you want `uvicorn --reload` locally.
+- The current launcher defaults to non-reload mode for better stability.
 
-The dashboard now prefers the locally running TradingView Desktop bridge at:
+## Environment Variables
 
-```text
-/Users/shivamsworld/Documents/OpenAi/tradingview-mcp
-```
+The complete environment reference lives in [.env.example](.env.example) and is explained in [Deployment Guide](docs/operations/deployment.md).
 
-The bridge talks to the installed app on your Mac through Chrome DevTools Protocol.
+Key groups:
 
-If TradingView is not already in debug mode, launch it with:
+- app/session: `APP_*`
+- market data/provider order: `MARKET_DATA_PROVIDER_ORDER`
+- Kite: `KITE_MCP_*`
+- Firebase/Auth: `FIREBASE_*`, `AUTH_ALLOW_DEV_FALLBACK`
+- Firestore feedback: `FEEDBACK_FIRESTORE_*`
+- TradingView: `TRADINGVIEW_*`
+- Postgres readiness: `POSTGRES_*`
 
-```bash
-cd /Users/shivamsworld/Documents/OpenAi/tradingview-mcp
-node src/cli/index.js launch --no-kill
-```
+## Current Integration Status
 
-That uses your installed Desktop app and keeps the workflow local.
+- `Kite MCP`: hosted session bridge is wired into FastAPI and preserves Zerodha login/consent flow
+- `Firebase Auth`: prepared, defaults to local dev fallback when credentials are absent
+- `Firestore`: prepared for feedback storage, not enabled by default
+- `PostgreSQL`: runtime store supports Postgres when `POSTGRES_ENABLED=true` and `POSTGRES_DSN` is set
+- `TradingView Desktop`: supported through the local desktop bridge when available
 
-## Browser snapshot fallback
+## Technical Direction
 
-The dashboard also knows how to use the cloned browser snapshot repo at:
+- current stack: FastAPI + Jinja + vanilla JS/CSS
+- recommended deploy target for the current monolith: Vercel
+- future scaling path: move persistent state to Postgres/Firestore and move job execution into background workers
 
-```text
-/Users/shivamsworld/Documents/OpenAi/tradingview-chart-mcp
-```
+## Private Repository Guidance
 
-To enable the fallback browser snapshots, add your TradingView cookies to `.env`:
+This repository is prepared to stay private while still being clean enough for future teammates and contractors:
 
-```bash
-TRADINGVIEW_SESSION_ID=...
-TRADINGVIEW_SESSION_ID_SIGN=...
-```
+- absolute personal filesystem paths have been removed from repo-facing docs and metadata
+- docs are structured for onboarding, operations, and roadmap review
+- deployment guidance assumes future collaborators need to stand the project up without prior context
 
-Those values come from your logged-in TradingView browser cookies. Without them, the dashboard still works, but the snapshot section will show a helpful setup message instead of a live chart image.
+## Known Limitations
 
-## Kite MCP
+- local JSON remains the fallback when Postgres is not configured
+- Firebase production auth is not configured by default
+- Firestore feedback storage is not configured by default
+- Vercel deployment is only appropriate once persistence is externalized
+- background jobs are in-memory and do not survive process restarts
 
-The app is now prepared for Zerodha's official Kite MCP server and expects it in:
+## License / Internal Use
 
-```text
-/Users/shivamsworld/Documents/OpenAi/kite-mcp-server
-```
-
-Official repo:
-
-```text
-https://github.com/zerodha/kite-mcp-server
-```
-
-The current provider order is:
-
-```text
-Kite MCP -> jugaad-data -> Yahoo Finance
-```
-
-You can adjust that in `.env` with:
-
-```bash
-MARKET_DATA_PROVIDER_ORDER=kite_mcp,jugaad_data,yfinance
-```
-
-Hosted Kite MCP endpoint:
-
-```text
-https://mcp.kite.trade/mcp
-```
-
-At the moment, the dashboard is ready for Kite-first routing, but the actual dashboard-side MCP auth bridge still needs to be added before live Kite quotes can be consumed inside the FastAPI app itself. Until then, Indian live quotes fall back to `jugaad-data`.
-
-## Notes
-
-- Market data uses a provider chain: Kite MCP first, `jugaad-data` for Indian live quotes, then `yfinance`.
-- Classification is rules-based and transparent, so you can extend the scoring logic without needing another service.
-- This app is designed for local use and development, not production hardening.
+Add your preferred private-company or internal-use license before wider collaboration. The repository currently assumes internal/private use.

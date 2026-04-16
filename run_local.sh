@@ -9,8 +9,11 @@ if [[ ! -d "$VENV_DIR" ]]; then
 fi
 
 source "$VENV_DIR/bin/activate"
-python -m pip install --upgrade pip
-python -m pip install -r "$ROOT_DIR/requirements.txt"
+
+if [[ "${SKIP_PIP_INSTALL:-0}" != "1" ]]; then
+  python -m pip install --upgrade pip || true
+  python -m pip install -r "$ROOT_DIR/requirements.txt" || true
+fi
 
 export PYTHONPATH="$ROOT_DIR"
 
@@ -23,4 +26,8 @@ fi
 HOST="${APP_HOST:-127.0.0.1}"
 PORT="${APP_PORT:-8008}"
 
-exec uvicorn app.main:app --host "$HOST" --port "$PORT" --reload
+if [[ "${APP_RELOAD:-0}" == "1" ]]; then
+  exec uvicorn app.main:app --host "$HOST" --port "$PORT" --reload
+fi
+
+exec uvicorn app.main:app --host "$HOST" --port "$PORT"

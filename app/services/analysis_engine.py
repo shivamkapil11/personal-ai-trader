@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
+from app.services.knowledge_registry import knowledge_registry
+
 
 def pill(value: str, label: str) -> Dict[str, str]:
     return {"tone": value, "label": label}
@@ -270,7 +272,7 @@ def confidence_level(label: str, conviction: float) -> str:
     return "Low"
 
 
-def build_report(stock: Dict[str, Any]) -> Dict[str, Any]:
+def build_report(stock: Dict[str, Any], request_context: Dict[str, Any] | None = None) -> Dict[str, Any]:
     swing = score_swing(stock)
     long_term = score_long_term(stock)
     label = pick_label(swing["score"], long_term["score"])
@@ -310,6 +312,11 @@ def build_report(stock: Dict[str, Any]) -> Dict[str, Any]:
     long_term_base = max(8, round(long_term["score"] * 0.32, 1))
     long_term_bull = round(long_term_base + 12, 1)
     long_term_bear = round(-min(18, risks["rating"] * 2.0), 1)
+    knowledge_context = knowledge_registry.select(
+        focus_areas=(request_context or {}).get("focus_areas", []),
+        label=label,
+        mode="analysis",
+    )
 
     return {
         "identity": {
@@ -350,6 +357,7 @@ def build_report(stock: Dict[str, Any]) -> Dict[str, Any]:
         "technicals": t,
         "fundamentals": f,
         "market_context": market_context,
+        "reasoning_context": knowledge_context,
         "swing_plan": swing_plan,
         "long_term_view": {
             "qualifies": label == "Long-Term Investment" or long_term["score"] >= 70,
