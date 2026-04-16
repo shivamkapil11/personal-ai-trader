@@ -13,6 +13,8 @@ This folder is organized so a new engineer can move from product understanding t
 
 - [Deployment Guide](operations/deployment.md)
 - [GoDaddy Domain Setup](operations/domain-setup-godaddy.md)
+- [Local PostgreSQL Setup](operations/postgres-local-setup.md)
+- [Firebase Google Auth Setup](operations/firebase-auth-setup.md)
 
 ## Source Material Included in Repo
 
