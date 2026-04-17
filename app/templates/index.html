@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/static/styles.css" />
@@ -20,180 +20,160 @@
             <div class="brand-lockup">
               <div class="brand-mark">G</div>
               <div>
-                <p class="eyebrow">AI Investing Workspace</p>
+                <p class="eyebrow">AI stock research workspace</p>
                 <strong>Gains</strong>
               </div>
             </div>
             <nav class="landing-nav-links">
-              <a href="#landing-features">Features</a>
-              <a href="#landing-workflow">How it works</a>
-              <a href="#landing-proof">Why it works</a>
+              <a href="#landing-features">Platform</a>
+              <a href="#landing-models">Research models</a>
+              <a href="#landing-workflow">Workflow</a>
             </nav>
             <button class="secondary-button small-button" type="button" onclick="document.getElementById('auth-card').scrollIntoView({behavior:'smooth', block:'center'})">Sign in</button>
           </header>
 
-          <div class="auth-layout landing-hero">
-            <div class="auth-intro landing-copy">
-              <span class="status-chip chip-green">Built for clearer stock decisions</span>
-              <div class="auth-copy">
-                <p class="eyebrow">Local-first stock research</p>
-                <h1>The stock research app that works for you.</h1>
-                <p class="hero-text">
-                  Move from idea to conviction with one calmer workflow for technicals, fundamentals, stock comparison, portfolio context, and source-backed reasoning.
+          <section class="landing-hero glass-card">
+            <div class="landing-hero-copy">
+              <span class="status-chip chip-green">Decision support, not prediction theater</span>
+              <div class="landing-copy-block">
+                <p class="eyebrow">Local-first investing workflow</p>
+                <h1>Research ideas with one calmer path from prompt to conviction.</h1>
+                <p class="landing-hero-sub">
+                  Gains turns stock prompts, comparison ideas, and industry themes into a structured dashboard for technicals, fundamentals, portfolio context, and source-tagged reasoning.
                 </p>
               </div>
 
               <div class="landing-actions">
                 <button id="hero-login-button" class="primary-button" type="button">Continue with Google</button>
-                <a class="secondary-button landing-link-button" href="#landing-features">See the workflow</a>
+                <a class="secondary-button landing-link-button" href="#landing-workflow">See how it flows</a>
               </div>
 
-              <div class="landing-trust-grid">
-                <div class="simple-card">
-                  <span>Compare faster</span>
-                  <strong>Single stock, multi-stock, and industry discovery</strong>
+              <div class="landing-proof-strip">
+                <div class="proof-chip">
+                  <span class="proof-label">Modes</span>
+                  <strong>Single stock · compare · industry discovery</strong>
                 </div>
-                <div class="simple-card">
-                  <span>Reason clearly</span>
-                  <strong>Technical, fundamental, risk, and model-lens outputs</strong>
+                <div class="proof-chip">
+                  <span class="proof-label">Output</span>
+                  <strong>Swing, long-term, watchlist, or avoid</strong>
                 </div>
-                <div class="simple-card">
-                  <span>Stay personalized</span>
-                  <strong>Optional Kite-linked portfolio awareness</strong>
+                <div class="proof-chip">
+                  <span class="proof-label">Portfolio</span>
+                  <strong>Optional, read-only Kite context</strong>
                 </div>
               </div>
             </div>
 
-            <div id="auth-card" class="auth-panel glass-card landing-signin">
-              <div class="landing-preview">
-                <div class="landing-preview-header">
-                  <div>
-                    <p class="eyebrow">Live preview</p>
-                    <h2>One dashboard for research, comparison, and action.</h2>
-                  </div>
-                  <span class="status-chip chip-green">Live market-aware</span>
-                </div>
-                <div class="landing-preview-board">
-                  <div class="preview-column">
-                    <div class="preview-widget">
-                      <span class="preview-label">Research view</span>
-                      <strong>Swing vs long-term</strong>
-                      <p>Decision tags, targets, risks, and conviction in one place.</p>
-                    </div>
-                    <div class="preview-widget">
-                      <span class="preview-label">Prompt handling</span>
-                      <strong>Natural language first</strong>
-                      <p>Type stock names, comparisons, or industry prompts without rigid syntax.</p>
-                    </div>
-                  </div>
-                  <div class="preview-column">
-                    <div class="preview-widget accent-widget">
-                      <span class="preview-label">Portfolio optional</span>
-                      <strong>Kite-connected insights</strong>
-                      <p>Bring holdings, risk, and monitoring into the same workspace when needed.</p>
-                    </div>
-                    <div class="preview-mini-row">
-                      <div class="mini-preview-card">
-                        <span>Models</span>
-                        <strong>1 to all</strong>
-                      </div>
-                      <div class="mini-preview-card">
-                        <span>Sources</span>
-                        <strong>{{ knowledge_summary.count }} tracked</strong>
-                      </div>
-                    </div>
-                  </div>
+            <aside id="auth-card" class="landing-signin glass-card">
+              <div class="landing-ring" aria-hidden="true">
+                <svg viewBox="0 0 88 88">
+                  <circle class="ring-track" cx="44" cy="44" r="38"></circle>
+                  <circle id="landing-ring-fill" class="ring-fill" cx="44" cy="44" r="38"></circle>
+                </svg>
+                <div class="landing-ring-center">
+                  <span id="landing-ring-value">18</span>
+                  <span class="pct">%</span>
                 </div>
               </div>
 
-              <div class="landing-signin-card">
-                <p class="eyebrow">Sign in</p>
-                <h3>Start with your Google account</h3>
+              <div class="landing-signin-copy">
+                <p class="eyebrow">Access your workspace</p>
+                <h2>Start with Google, then decide whether you want portfolio context.</h2>
                 <p class="muted">
-                  Keep the session persistent, then decide whether you want broker-connected portfolio context.
+                  The workspace stays usable without broker access. Connect Kite later only if holdings, allocation, and monitoring overlays matter for your flow.
                 </p>
-                <button id="google-login-button" class="primary-button full-width" type="button">Continue with Google</button>
-                <p id="auth-helper" class="helper-text">
-                  {% if auth_state.firebase_enabled %}
-                  Firebase is configured for Google sign-in.
-                  {% else %}
-                  Firebase is not configured yet, so the app will use a safe local dev login until you add keys.
-                  {% endif %}
-                </p>
-                <div class="auth-meta-grid">
-                  <div class="meta-stat">
-                    <span>Research base</span>
-                    <strong>{{ knowledge_summary.count }} sources</strong>
-                  </div>
-                  <div class="meta-stat">
-                    <span>Workspace mode</span>
-                    <strong>Local-first</strong>
-                  </div>
+              </div>
+
+              <button id="google-login-button" class="primary-button full-width" type="button">Continue with Google</button>
+              <p id="auth-helper" class="helper-text">
+                {% if auth_state.firebase_enabled %}
+                Firebase is configured for Google sign-in.
+                {% else %}
+                Firebase is not configured yet, so the app will use a safe local dev login until you add keys.
+                {% endif %}
+              </p>
+
+              <div class="landing-signin-foot">
+                <div class="meta-stat">
+                  <span>Knowledge base</span>
+                  <strong>{{ knowledge_summary.count }} structured sources</strong>
+                </div>
+                <div class="meta-stat">
+                  <span>Session style</span>
+                  <strong>Persistent and local-first</strong>
                 </div>
               </div>
-            </div>
-          </div>
+            </aside>
+          </section>
 
-          <section id="landing-proof" class="landing-metrics">
-            <div class="meta-stat">
-              <span>Core use case</span>
-              <strong>Research, compare, and decide in one place</strong>
-            </div>
-            <div class="meta-stat">
-              <span>Data path</span>
-              <strong>Kite -> jugaad-data -> Yahoo fallback chain</strong>
-            </div>
-            <div class="meta-stat">
-              <span>Portfolio layer</span>
-              <strong>Optional, read-only Kite connection</strong>
-            </div>
+          <section class="landing-grow" aria-hidden="true">
+            <div id="landing-grow-bar" class="landing-grow-bar"></div>
+            <p class="landing-grow-caption">Built to get denser and more useful as the research progresses.</p>
+          </section>
+
+          <section id="landing-three" class="landing-three">
+            <article class="landing-three-card">
+              <div class="landing-three-icon">01</div>
+              <h3>Prompt naturally</h3>
+              <p>Use company names, ticker symbols, comparison prompts, or broad sector questions without switching modes manually.</p>
+            </article>
+            <article class="landing-three-card">
+              <div class="landing-three-icon">02</div>
+              <h3>Layer research models</h3>
+              <p>Run one decision lens or combine technical, fundamental, risk, sector, and earnings thinking in a single output.</p>
+            </article>
+            <article class="landing-three-card">
+              <div class="landing-three-icon">03</div>
+              <h3>Decide with structure</h3>
+              <p>See decision tags, return scenarios, setup quality, downside notes, and source-backed reasoning without clutter.</p>
+            </article>
           </section>
 
           <section id="landing-features" class="landing-feature-stack">
             <article class="landing-feature glass-card">
               <div class="landing-feature-copy">
-                <p class="eyebrow">Find better candidates</p>
-                <h2>Search by stock, compare by prompt, or explore an industry theme.</h2>
+                <p class="eyebrow">Research surface</p>
+                <h2>One workspace for ideas, comparison, and evidence-tagged stock dashboards.</h2>
                 <p class="muted">
-                  You can ask for a single company, compare a few names side by side, or type something broader like nuclear industry stocks and let the system map the segment first.
+                  Instead of jumping across scattered tabs, the product keeps live context, research prompts, progress, and finished output in a single surface that stays readable.
                 </p>
               </div>
               <div class="landing-feature-card">
                 <div class="feature-list-item">
-                  <strong>Single stock dashboards</strong>
-                  <p>Technicals, fundamentals, risks, conviction, and return scenarios.</p>
+                  <strong>Single-stock reports</strong>
+                  <p>Decision label, technical context, fundamentals, risks, conviction, and return scenarios.</p>
                 </div>
                 <div class="feature-list-item">
-                  <strong>Comparison mode</strong>
-                  <p>Rank multiple stocks without manually restructuring your query.</p>
+                  <strong>Compare side by side</strong>
+                  <p>Quickly rank multiple names for long-term quality, swing fit, and downside profile.</p>
                 </div>
                 <div class="feature-list-item">
                   <strong>Industry discovery</strong>
-                  <p>Theme prompts route into sector mapping instead of symbol lookup.</p>
+                  <p>Theme prompts map the segment first and shortlist listed candidates instead of forcing a ticker lookup.</p>
                 </div>
               </div>
             </article>
 
-            <article class="landing-feature glass-card reverse-feature">
+            <article id="landing-models" class="landing-feature glass-card reverse-feature">
               <div class="landing-feature-card">
                 <div class="feature-list-item">
                   <strong>Technical layer</strong>
-                  <p>Momentum, structure, RSI, MACD, support-resistance, and swing setup quality.</p>
+                  <p>Trend structure, momentum, support-resistance, and setup quality without terminal-style noise.</p>
                 </div>
                 <div class="feature-list-item">
                   <strong>Fundamental layer</strong>
-                  <p>Growth, margins, returns, debt, ownership, and business quality.</p>
+                  <p>Growth, returns, leverage, ownership trends, and business quality in compact tiles.</p>
                 </div>
                 <div class="feature-list-item">
-                  <strong>Model lens</strong>
-                  <p>Use one research model or combine them together for a fuller read.</p>
+                  <strong>All models together</strong>
+                  <p>Use one research model or combine all of them when you want a fuller decision framework.</p>
                 </div>
               </div>
               <div class="landing-feature-copy">
-                <p class="eyebrow">See the full picture</p>
-                <h2>Layer research models without turning the workflow into noise.</h2>
+                <p class="eyebrow">Model system</p>
+                <h2>Apply different research lenses without making the workspace feel busy.</h2>
                 <p class="muted">
-                  The product keeps the output structured, readable, and decision-oriented even when multiple reasoning lenses are active.
+                  The interface stays calm even when multiple reasoning models are active, so the output reads like a decision memo instead of a noisy AI dump.
                 </p>
               </div>
             </article>
@@ -201,27 +181,27 @@
 
           <section id="landing-workflow" class="landing-workflow">
             <div class="landing-section-head">
-              <p class="eyebrow">How it works</p>
-              <h2>From login to live research in a short, calm flow.</h2>
+              <p class="eyebrow">Workflow</p>
+              <h2>From login to live research in three short steps.</h2>
             </div>
             <div class="landing-workflow-grid">
               <div class="workflow-step glass-card">
                 <span>01</span>
                 <strong>Sign in with Google</strong>
-                <p>Start with a persistent session and open the workspace immediately.</p>
+                <p>Open a persistent session first, then choose whether you want the portfolio layer.</p>
               </div>
               <div class="workflow-step glass-card">
                 <span>02</span>
-                <strong>Choose Kite or skip it</strong>
-                <p>Connect only if you want portfolio-aware insights. Otherwise go straight to research.</p>
+                <strong>Connect Kite or skip</strong>
+                <p>Portfolio context stays optional, read-only, and separate from the core stock-research flow.</p>
               </div>
               <div class="workflow-step glass-card">
                 <span>03</span>
-                <strong>Type naturally</strong>
-                <p>Use stock symbols, company names, comparisons, or industry prompts and let the workflow organize the rest.</p>
+                <strong>Run research cleanly</strong>
+                <p>Type a stock, compare a few names, or start from an industry theme and let the workflow structure the rest.</p>
               </div>
             </div>
-          </div>
+          </section>
         </div>
       </section>
 
@@ -307,12 +287,22 @@
         </header>
 
         <section class="dashboard-overview glass-card">
-          <div>
-            <p class="eyebrow">Overview</p>
+          <div class="workspace-overview-copy">
+            <p class="eyebrow">Workspace</p>
             <h1>Research workspace</h1>
             <p id="dashboard-source-note" class="hero-text">
               Everything you need for research stays in one place.
             </p>
+          </div>
+          <div class="workspace-overview-side">
+            <div class="overview-chip">
+              <span class="proof-label">Focused flow</span>
+              <strong>Prompt → progress → decision</strong>
+            </div>
+            <div class="overview-chip">
+              <span class="proof-label">Portfolio</span>
+              <strong>Optional, read-only context</strong>
+            </div>
           </div>
         </section>
 
@@ -368,7 +358,7 @@
               <div class="section-title">
                 <div>
                   <p class="eyebrow">Research</p>
-                  <h2>Search a stock or compare a few names.</h2>
+                  <h2>Search a stock, compare a few names, or start from an industry theme.</h2>
                 </div>
               </div>
 

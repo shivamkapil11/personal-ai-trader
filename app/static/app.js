@@ -63,6 +63,10 @@ const resultToolbar = document.getElementById("result-toolbar");
 const resultHomeButton = document.getElementById("result-home-button");
 const resultSearchForm = document.getElementById("result-search-form");
 const resultSearchInput = document.getElementById("result-search-input");
+const landingRingFill = document.getElementById("landing-ring-fill");
+const landingRingValue = document.getElementById("landing-ring-value");
+const landingGrowBar = document.getElementById("landing-grow-bar");
+const landingThree = document.getElementById("landing-three");
 
 let appState = bootstrap;
 let currentEventSource = null;
@@ -72,6 +76,7 @@ let activeScreen = "auth";
 let kiteStatusPoller = null;
 let kitePollingAttempts = 0;
 let kiteSyncInFlight = false;
+let landingObserver = null;
 
 function showScreen(key) {
   activeScreen = key;
@@ -80,6 +85,9 @@ function showScreen(key) {
     if (!element) return;
     element.classList.toggle("hidden", name !== key);
   });
+  if (key === "auth") {
+    updateLandingEffects();
+  }
 }
 
 function formatValue(value, fallback = "N/A", suffix = "") {
@@ -141,6 +149,39 @@ function formatRelativeMoment(value) {
     return date.toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
   } catch (_) {
     return "";
+  }
+}
+
+function updateLandingEffects() {
+  const maxOffset = Math.max(
+    1,
+    document.documentElement.scrollHeight - window.innerHeight
+  );
+  const progress = Math.max(0, Math.min(1, window.scrollY / maxOffset));
+  if (landingGrowBar) {
+    landingGrowBar.style.width = `${18 + progress * 68}%`;
+    landingGrowBar.style.height = `${8 + progress * 10}px`;
+    landingGrowBar.style.opacity = `${0.72 + progress * 0.28}`;
+  }
+  if (landingRingFill) {
+    const radius = 38;
+    const circumference = 2 * Math.PI * radius;
+    const value = Math.round(18 + progress * 72);
+    landingRingFill.style.strokeDasharray = `${(circumference * value) / 100} ${circumference}`;
+    if (landingRingValue) landingRingValue.textContent = `${value}`;
+  }
+}
+
+function initLandingEffects() {
+  updateLandingEffects();
+  if (landingThree && !landingObserver) {
+    landingObserver = new IntersectionObserver(
+      ([entry]) => {
+        landingThree.classList.toggle("is-visible", entry.isIntersecting);
+      },
+      { threshold: 0.25 }
+    );
+    landingObserver.observe(landingThree);
   }
 }
 
@@ -1097,6 +1138,10 @@ document.querySelectorAll(".preset").forEach((button) => {
   });
 });
 
+window.addEventListener("scroll", () => {
+  if (activeScreen === "auth") updateLandingEffects();
+});
+
 document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
   anchor.addEventListener("click", (event) => {
     const href = anchor.getAttribute("href");
@@ -1160,3 +1205,5 @@ refreshBootstrap().catch((error) => {
   if (authHelper) authHelper.textContent = error.message || "Unable to bootstrap the app.";
   showScreen("auth");
 });
+
+initLandingEffects();

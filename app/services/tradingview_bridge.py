@@ -3,10 +3,13 @@ from __future__ import annotations
 import base64
 import json
 import os
+import socket
 import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Any, Dict
+from urllib.request import urlopen
 
 from app.config import settings
 
@@ -15,20 +18,54 @@ class TradingViewBridge:
     def __init__(self) -> None:
         self.repo_path = settings.tradingview_repo_path
         self.desktop_repo_path = settings.tradingview_desktop_repo_path
+        self._status_cache: Dict[str, Any] | None = None
+        self._status_cached_at = 0.0
+
+    def _cached(self) -> Dict[str, Any] | None:
+        if self._status_cache and (time.time() - self._status_cached_at) < 15:
+            return self._status_cache
+        return None
+
+    def _store_cached(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        self._status_cache = payload
+        self._status_cached_at = time.time()
+        return payload
+
+    @staticmethod
+    def _desktop_debug_port_open(port: int = 9222, timeout: float = 0.35) -> bool:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.settimeout(timeout)
+            return sock.connect_ex(("127.0.0.1", port)) == 0
+
+    @staticmethod
+    def _desktop_debug_metadata(timeout: float = 0.6) -> Dict[str, Any]:
+        with urlopen("http://127.0.0.1:9222/json/version", timeout=timeout) as response:
+            return json.loads(response.read().decode("utf-8"))
 
     def desktop_status(self) -> Dict[str, Any]:
         if not settings.tradingview_desktop_enabled:
             return {"available": False, "message": "Desktop TradingView bridge is turned off in configuration."}
         if not self.desktop_repo_path.exists():
             return {"available": False, "message": f"TradingView Desktop bridge repo was not found at {self.desktop_repo_path}."}
+        if not self._desktop_debug_port_open():
+            return {
+                "available": False,
+                "message": (
+                    f"TradingView Desktop is installed but not connected yet. "
+                    f"Launch it in debug mode with: cd {self.desktop_repo_path} && node src/cli/index.js launch --no-kill"
+                ),
+            }
         try:
-            status = self._run_desktop_cli("status")
+            metadata = self._desktop_debug_metadata()
             return {
                 "available": True,
                 "message": "TradingView Desktop bridge is connected.",
-                "details": status,
+                "details": {
+                    "browser": metadata.get("Browser"),
+                    "websocket": metadata.get("webSocketDebuggerUrl"),
+                },
             }
-        except RuntimeError as exc:
+        except Exception as exc:
             return {
                 "available": False,
                 "message": (
@@ -51,24 +88,27 @@ class TradingViewBridge:
         return {"available": True, "message": "TradingView snapshots are ready."}
 
     def status(self) -> Dict[str, Any]:
+        cached = self._cached()
+        if cached:
+            return cached
         desktop = self.desktop_status()
         if desktop["available"]:
-            return {
+            return self._store_cached({
                 "available": True,
                 "source": "desktop",
                 "message": desktop["message"],
                 "details": desktop.get("details"),
-            }
+            })
         browser = self.browser_status()
         if browser["available"]:
-            return {"available": True, "source": "browser", "message": browser["message"]}
-        return {
+            return self._store_cached({"available": True, "source": "browser", "message": browser["message"]})
+        return self._store_cached({
             "available": False,
             "source": None,
             "message": desktop["message"] if settings.tradingview_desktop_enabled else browser["message"],
             "desktop": desktop,
             "browser": browser,
-        }
+        })
 
     def _run_desktop_cli(self, *args: str) -> Dict[str, Any]:
         command = ["node", "src/cli/index.js", *args]
