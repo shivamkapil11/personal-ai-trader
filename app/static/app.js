@@ -40,7 +40,6 @@ const logoutButton = document.getElementById("logout-button");
 const userName = document.getElementById("user-name");
 const userEmail = document.getElementById("user-email");
 const userAvatar = document.getElementById("user-avatar");
-const heroKiteStatus = document.getElementById("hero-kite-status");
 const providerVisibility = document.getElementById("provider-visibility");
 const dashboardSourceNote = document.getElementById("dashboard-source-note");
 const dashboardSessionPill = document.getElementById("dashboard-session-pill");
@@ -242,15 +241,10 @@ function renderUserCard() {
 
 function renderHeroMeta() {
   const user = appState.session;
-  const marketData = appState.market_data || {};
   const sourceCopy = user
-    ? `Welcome back, ${user.name || "there"}. Live data flows through ${(marketData.order || []).join(" -> ")}.`
-    : "Provider visibility, stock intelligence, and portfolio context stay in one cleaner workflow.";
+    ? `Welcome back, ${user.name || "there"}.`
+    : "Everything you need for research stays in one place.";
   if (dashboardSourceNote) dashboardSourceNote.textContent = sourceCopy;
-  if (heroKiteStatus) {
-    const kite = appState.kite || {};
-    heroKiteStatus.textContent = kite.kite_connected ? "Connected" : kite.bridge_ready ? "Bridge ready" : "Pending setup";
-  }
 }
 
 function renderWatchlist() {
