@@ -20,6 +20,13 @@ def _path_from_env(name: str, default: Path) -> Path:
     return Path(raw.strip())
 
 
+def _runtime_data_root() -> Path:
+    # Vercel and similar serverless runtimes only allow writes under /tmp.
+    if os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"):
+        return Path("/tmp/gains-runtime")
+    return PROJECT_ROOT / "data"
+
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 load_dotenv(PROJECT_ROOT / ".env")
 
@@ -76,9 +83,10 @@ class Settings:
 def get_settings() -> Settings:
     repo_default = PROJECT_ROOT.parent / "tradingview-chart-mcp"
     kite_repo_default = PROJECT_ROOT.parent / "kite-mcp-server"
-    data_default = PROJECT_ROOT / "data" / "app_state.json"
+    runtime_data_root = _runtime_data_root()
+    data_default = runtime_data_root / "app_state.json"
     knowledge_default = PROJECT_ROOT / "data" / "knowledge_registry.json"
-    activity_log_default = PROJECT_ROOT / "data" / "logs" / "activity.jsonl"
+    activity_log_default = runtime_data_root / "logs" / "activity.jsonl"
     migrations_default = PROJECT_ROOT / "infrastructure" / "postgres" / "migrations"
     width = os.getenv("TRADINGVIEW_WINDOW_WIDTH", "1400")
     height = os.getenv("TRADINGVIEW_WINDOW_HEIGHT", "1400")
