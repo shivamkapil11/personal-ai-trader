@@ -61,6 +61,18 @@
       "vibe_inspired_from": "risk_committee"
     },
     {
+      "id": "all_models",
+      "label": "All Models Together",
+      "description": "Runs the request through investment, technical, earnings, risk, and sector lenses together for a fuller read.",
+      "best_for": ["high-conviction decisions", "full-stack research", "industry plus stock prompts"],
+      "focus_areas": ["technicals", "fundamentals", "business_quality", "management", "valuation", "risk", "news", "sector"],
+      "trigger_keywords": ["all models", "all research models", "all lenses", "combine models", "full stack", "use every model"],
+      "workflow": ["Investment Committee", "Technical Panel", "Earnings Desk", "Risk Committee", "Sector Scout"],
+      "tone": "green",
+      "safe_local_only": true,
+      "vibe_inspired_from": "consensus_stack"
+    },
+    {
       "id": "sector_scout",
       "label": "Sector Scout",
       "description": "Best for themes, industry mapping, and finding candidate stocks from a sector or trend.",

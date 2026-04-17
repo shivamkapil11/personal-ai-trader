@@ -496,6 +496,13 @@ async def run_job(
             f"Structured this as a {request_context['mode_label'].lower()} for {', '.join(symbols)}.",
             9,
         )
+        if request_context.get("industry_profile"):
+            emit(
+                job_id,
+                "industry-map",
+                f"Mapped the {request_context['industry_profile']['label']} and shortlisted {', '.join(symbols)}.",
+                10,
+            )
         emit(job_id, "eta", f"Estimated completion time: {estimate['label']}.", 11)
         if request_context["notes_highlights"]:
             emit(job_id, "thoughts", "Turned your notes into a cleaner stock-thinking checklist.", 12)

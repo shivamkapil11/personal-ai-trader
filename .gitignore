@@ -7,3 +7,4 @@ data/app_state.json
 data/logs/
 # Added by code-review-graph
 .code-review-graph/
+.claude/

@@ -185,7 +185,7 @@ function renderAgentHelper() {
   if (!agentHelper) return;
   const selected = selectedAgentMeta();
   if (!selected) {
-    agentHelper.textContent = "Choose a local research agent to bias the workflow.";
+    agentHelper.textContent = "Choose a local research model to bias the workflow.";
     return;
   }
   const bestFor = (selected.best_for || []).slice(0, 2).join(", ");
@@ -196,11 +196,11 @@ function renderAgentPanel() {
   if (!agentPanel) return;
   const options = agentOptions();
   if (!options.length) {
-    agentPanel.textContent = "Local research agents are not loaded yet.";
+    agentPanel.textContent = "Local research models are not loaded yet.";
     return;
   }
   agentPanel.innerHTML = `
-    <p class="muted">Local-only research agents route the same data through different decision lenses. They do not send extra personal data anywhere.</p>
+    <p class="muted">Local-only research models route the same data through different decision lenses. They do not send extra personal data anywhere.</p>
     <div class="placeholder-pills">
       ${options
         .slice(1)
@@ -370,52 +370,6 @@ function renderPortfolio() {
   `;
 }
 
-function renderRequestContext(context) {
-  if (!context) return "";
-  const focusBadges = (context.focus_labels || []).map((label) => createBadge(label, "tone-green")).join("");
-  const noteItems = (context.notes_highlights || []).map((item) => `<li>${item}</li>`).join("");
-  const frameworkItems = (context.framework_steps || []).map((item) => `<li>${item}</li>`).join("");
-  const checklistItems = (context.thinking_checklist || []).map((item) => `<li>${item}</li>`).join("");
-
-  return `
-    <section class="brief-section glass-card">
-      <div class="section-title">
-        <div>
-          <p class="eyebrow">Prompt Intelligence</p>
-          <h2>The engine's read of your request</h2>
-        </div>
-      </div>
-      <div class="metric-grid">
-        ${createTile("Run Type", context.mode_label)}
-        ${createTile("Time Horizon", context.time_horizon_label)}
-        ${createTile("Detected Stocks", (context.symbols || []).join(", "))}
-      </div>
-      <div class="thought-grid">
-        <div class="tile">
-          <div class="tile-label">Intent summary</div>
-          <div class="muted">${context.intent_summary}</div>
-        </div>
-        <div class="tile">
-          <div class="tile-label">Organized prompt</div>
-          <div class="muted">${context.organized_prompt}</div>
-        </div>
-      </div>
-      <div class="badge-row">${focusBadges}</div>
-      ${noteItems ? `<div class="tile"><div class="tile-label">Your notes, cleaned up</div><ul class="list">${noteItems}</ul></div>` : ""}
-      <div class="thought-grid">
-        <div class="tile">
-          <div class="tile-label">How to think about it</div>
-          <ul class="list">${frameworkItems}</ul>
-        </div>
-        <div class="tile">
-          <div class="tile-label">Questions to answer</div>
-          <ul class="list">${checklistItems}</ul>
-        </div>
-      </div>
-    </section>
-  `;
-}
-
 function renderComparison(comparison) {
   if (!comparison || !comparison.table || !comparison.table.length) return "";
   const tiles = comparison.table
@@ -434,17 +388,64 @@ function renderComparison(comparison) {
     <section class="compare-section glass-card">
       <div class="section-title">
         <div>
-          <p class="eyebrow">Compare View</p>
+          <p class="eyebrow">Compare</p>
           <h2>Quick ranking</h2>
         </div>
       </div>
       <div class="compare-grid">${tiles}</div>
-      <div class="metric-grid">
+      <div class="metric-grid metric-grid-compact">
         ${createTile("Best Long-Term", comparison.summary.best_long_term)}
         ${createTile("Best Swing", comparison.summary.best_swing)}
         ${createTile("Lowest Risk", comparison.summary.lowest_risk)}
         ${comparison.summary.best_fit_for_prompt ? createTile("Best Fit For Prompt", comparison.summary.best_fit_for_prompt) : ""}
-        ${comparison.summary.agent_lens ? createTile("Agent Lens", comparison.summary.agent_lens) : ""}
+        ${comparison.summary.agent_lens ? createTile("Model Lens", comparison.summary.agent_lens) : ""}
+      </div>
+    </section>
+  `;
+}
+
+function renderIndustryView(context) {
+  const profile = context?.industry_profile;
+  if (!profile) return "";
+  const segmentItems = (profile.segments || []).map((item) => `<li>${item}</li>`).join("");
+  const candidates = (profile.candidates || [])
+    .map(
+      (item) => `
+        <div class="industry-candidate">
+          <div>
+            <strong>${item.company || item.symbol}</strong>
+            <div class="muted">${item.symbol}</div>
+          </div>
+          <p class="muted">${item.fit || "Relevant listed candidate."}</p>
+        </div>
+      `
+    )
+    .join("");
+
+  return `
+    <section class="agent-section glass-card">
+      <div class="section-title">
+        <div>
+          <p class="eyebrow">Industry Segmentation</p>
+          <h2>${profile.label}</h2>
+        </div>
+        <span class="status-chip chip-yellow">Sector-first</span>
+      </div>
+      <p class="muted">${profile.description || "Mapped the theme before shortlisting stocks."}</p>
+      <div class="metric-grid metric-grid-compact">
+        ${createTile("Run Type", context.mode_label || "Industry Discovery")}
+        ${createTile("Shortlisted", (profile.shortlist_symbols || []).join(", "))}
+        ${createTile("Model", context?.agent?.label || "Sector Scout")}
+      </div>
+      <div class="thought-grid">
+        <div class="tile">
+          <div class="tile-label">Industry map</div>
+          <ul class="list">${segmentItems}</ul>
+        </div>
+        <div class="tile">
+          <div class="tile-label">Listed candidates</div>
+          <div class="industry-candidate-list">${candidates}</div>
+        </div>
       </div>
     </section>
   `;
@@ -458,12 +459,12 @@ function renderAgentLens(context) {
     <section class="agent-section glass-card">
       <div class="section-title">
         <div>
-          <p class="eyebrow">Research Agent</p>
+          <p class="eyebrow">Research Model</p>
           <h2>${agent.label}</h2>
         </div>
         <span class="status-chip chip-${agent.tone || "yellow"}">${agent.selection_mode === "manual" ? "Manual" : "Auto"}</span>
       </div>
-      <p class="muted">${agent.description || "This run used a local research lens."}</p>
+      <p class="muted">${agent.description || "This run used a local research model."}</p>
       <div class="badge-row">
         ${createBadge(agent.selection_reason || "Local preset applied.", `tone-${agent.tone || "yellow"}`)}
         ${(agent.best_for || []).slice(0, 3).map((item) => createBadge(item)).join("")}
@@ -516,7 +517,7 @@ function renderReport(report) {
     createTile("52W Low", formatValue(summary.fifty_two_week_low)),
     createTile("Conviction", formatValue(summary.conviction_score, "N/A", "/10")),
     createTile("Confidence", summary.confidence_level),
-    createTile("Agent Lens", selectedAgent.label || "Balanced"),
+    createTile("Model Lens", selectedAgent.label || "Balanced"),
   ].join("");
 
   const technicalTiles = [
@@ -562,8 +563,8 @@ function renderReport(report) {
   const chartAndNewsMarkup =
     snapshotMarkup || hasNews
       ? `
-      <section>
-        <div class="section-title"><div><p class="eyebrow">Latest Context</p><h3>Chart and news</h3></div></div>
+      <section class="result-section">
+        <div class="section-title compact-title"><div><p class="eyebrow">Latest Context</p><h3>Chart and news</h3></div></div>
         <div class="chart-grid">
           ${snapshotMarkup}
           ${hasNews ? `<div class="news-grid">${renderNews(report.news)}</div>` : ""}
@@ -574,54 +575,63 @@ function renderReport(report) {
 
   return `
     <article class="stock-card glass-card">
-      <div class="card-head">
-        <div>
-          <p class="eyebrow">Stock Dashboard</p>
-          <h2>${report.identity.company_name}</h2>
-          <div class="symbol-line">${report.identity.resolved_symbol} • ${summary.sector || "Sector N/A"}${summary.industry ? ` • ${summary.industry}` : ""}</div>
+      <div class="card-head card-head-dense">
+        <div class="headline-stack">
+          <div class="headline-row">
+            <p class="eyebrow">Stock dashboard</p>
+            <div class="pill-row">
+              <span class="status-chip chip-${summary.decision_pill.tone}">${summary.decision_pill.label}</span>
+              <span class="status-chip chip-${summary.trend_pill.tone}">${summary.trend_pill.label}</span>
+            </div>
+          </div>
+          <div class="title-row">
+            <h2>${report.identity.company_name}</h2>
+            <span class="symbol-chip">${report.identity.resolved_symbol}</span>
+          </div>
+          <div class="symbol-line">${summary.sector || "Sector N/A"}${summary.industry ? ` • ${summary.industry}` : ""}</div>
         </div>
-        <div class="pill-row">
-          <span class="status-chip chip-${summary.decision_pill.tone}">${summary.decision_pill.label}</span>
-          <span class="status-chip chip-${summary.trend_pill.tone}">${summary.trend_pill.label}</span>
+        <div class="headline-price">
+          <span class="tile-label">Current price</span>
+          <strong>${formatValue(summary.current_price)}</strong>
         </div>
       </div>
-      <section>
-        <div class="section-title"><div><p class="eyebrow">Summary</p><h3>Decision dashboard</h3></div></div>
+      <section class="result-section">
+        <div class="section-title compact-title"><div><p class="eyebrow">Summary</p><h3>Decision dashboard</h3></div></div>
         <div class="summary-grid">${summaryTiles}</div>
       </section>
-      <section>
-        <div class="section-title"><div><p class="eyebrow">Why This Call</p><h3>Swing vs Long-Term</h3></div></div>
-        <div class="metric-grid">
+      <section class="result-section">
+        <div class="section-title compact-title"><div><p class="eyebrow">Decision</p><h3>Swing vs long-term</h3></div></div>
+        <div class="metric-grid metric-grid-compact">
           ${createTile("Decision", report.decision.label)}
           ${createTile("Swing Score", formatValue(report.decision.swing_score, "N/A", "/100"))}
           ${createTile("Long-Term Score", formatValue(report.decision.long_term_score, "N/A", "/100"))}
         </div>
         <ul class="list">${report.decision.reasons.map((item) => `<li>${item}</li>`).join("")}</ul>
       </section>
-      <section>
-        <div class="section-title"><div><p class="eyebrow">Technicals</p><h3>Momentum and structure</h3></div></div>
+      <section class="result-section">
+        <div class="section-title compact-title"><div><p class="eyebrow">Technicals</p><h3>Momentum and structure</h3></div></div>
         <div class="metric-grid">${technicalTiles}</div>
       </section>
-      <section>
-        <div class="section-title"><div><p class="eyebrow">Fundamentals</p><h3>Financial quality</h3></div></div>
+      <section class="result-section">
+        <div class="section-title compact-title"><div><p class="eyebrow">Fundamentals</p><h3>Financial quality</h3></div></div>
         <div class="metric-grid">${fundamentalTiles}</div>
         <p class="muted">Financial trend label: ${fundamentals.financial_status || "N/A"}</p>
       </section>
-      <section>
-        <div class="section-title"><div><p class="eyebrow">Reasoning Layer</p><h3>Knowledge influence</h3></div></div>
+      <section class="result-section">
+        <div class="section-title compact-title"><div><p class="eyebrow">Reasoning</p><h3>Knowledge influence</h3></div></div>
         <div class="tile">
           <div class="tile-label">Source tags</div>
           <div class="badge-row">${(reasoning.sources || []).map((item) => createBadge(item.title, "tone-green")).join("")}</div>
           <ul class="list">${(reasoning.principles || []).map((item) => `<li>${item}</li>`).join("")}</ul>
         </div>
       </section>
-      <section>
-        <div class="section-title"><div><p class="eyebrow">Swing Plan</p><h3>Entry, stop, targets</h3></div></div>
+      <section class="result-section">
+        <div class="section-title compact-title"><div><p class="eyebrow">Swing Plan</p><h3>Entry, stop, targets</h3></div></div>
         ${swingMarkup}
       </section>
-      <section>
-        <div class="section-title"><div><p class="eyebrow">Risk and Return</p><h3>Scenario framework</h3></div></div>
-        <div class="metric-grid">
+      <section class="result-section">
+        <div class="section-title compact-title"><div><p class="eyebrow">Risk and Return</p><h3>Scenario framework</h3></div></div>
+        <div class="metric-grid metric-grid-compact">
           ${createTile("Risk Rating", formatValue(risks.rating, "N/A", "/10"))}
           ${createTile("Base Case", formatValue(report.return_framework.base_case_pct, "N/A", "%"))}
           ${createTile("Bull Case", formatValue(report.return_framework.bull_case_pct, "N/A", "%"))}
@@ -656,11 +666,12 @@ function addProgressEvent(event) {
 }
 
 function renderResult(payload) {
+  const industryMarkup = renderIndustryView(payload.request_context);
   const comparisonMarkup = renderComparison(payload.comparison);
   const agentMarkup = renderAgentLens(payload.request_context);
   const reportMarkup = payload.reports.map(renderReport).join("");
   resultBoard.classList.remove("empty-state");
-  resultBoard.innerHTML = `${agentMarkup}${comparisonMarkup}${reportMarkup}`;
+  resultBoard.innerHTML = `${industryMarkup}${agentMarkup}${comparisonMarkup}${reportMarkup}`;
   document.body.dataset.resultView = "focused";
   if (resultToolbar) resultToolbar.classList.remove("hidden");
   if (resultSearchInput) {

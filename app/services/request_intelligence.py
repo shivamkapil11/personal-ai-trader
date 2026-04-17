@@ -6,6 +6,7 @@ from typing import Any, Dict, List
 import yfinance as yf
 
 from app.services.agent_registry import agent_registry
+from app.services.industry_registry import industry_registry
 
 
 COMPARE_PATTERN = re.compile(r"\b(compare|vs|versus|against|better than)\b", re.IGNORECASE)
@@ -242,13 +243,24 @@ def merge_focus_areas(detected: List[str], preset_focus: List[str]) -> List[str]
     return combined
 
 
-def build_framework(mode: str, horizon: str, focus_areas: List[str], agent: Dict[str, Any]) -> Dict[str, List[str]]:
+def build_framework(
+    mode: str,
+    horizon: str,
+    focus_areas: List[str],
+    agent: Dict[str, Any],
+    industry_profile: Dict[str, Any] | None = None,
+) -> Dict[str, List[str]]:
     steps = [
         "Start by separating the stock story from the stock price setup so business quality and timing do not get mixed together.",
         "Decide early whether the main goal is a swing, a long-term investment, or simply building a watchlist.",
     ]
     if mode == "compare":
         steps[1] = "Rank the names separately for swing quality, long-term quality, and risk instead of forcing one absolute winner."
+    elif mode == "industry":
+        steps = [
+            "Map the industry first so you do not mistake a theme or ecosystem for a single stock idea.",
+            "Split the industry into segments, then shortlist the listed candidates that actually fit those segments.",
+        ]
 
     checklist = [
         "What is the main thesis in one sentence?",
@@ -268,6 +280,9 @@ def build_framework(mode: str, horizon: str, focus_areas: List[str], agent: Dict
     if "risk" in focus_areas:
         steps.append("Write the downside case before the upside case so the risk-reward stays honest.")
         checklist.append("What is the most realistic downside scenario if the thesis is wrong?")
+    if mode == "industry" and industry_profile:
+        steps.append(f"Start with the {industry_profile.get('label', 'industry')} map, then compare the shortlisted listed names.")
+        checklist.append("Which names are ecosystem exposure versus more direct beneficiaries?")
 
     if agent.get("workflow"):
         steps.append(f"{agent.get('label')} lens: {' -> '.join(agent.get('workflow', [])[:4])}.")
@@ -277,37 +292,65 @@ def build_framework(mode: str, horizon: str, focus_areas: List[str], agent: Dict
     return {"steps": steps[:5], "checklist": checklist[:6]}
 
 
-def build_intent_summary(symbols: List[str], mode: str, horizon: str, focus_labels: List[str], agent: Dict[str, Any]) -> str:
+def build_intent_summary(
+    symbols: List[str],
+    mode: str,
+    horizon: str,
+    focus_labels: List[str],
+    agent: Dict[str, Any],
+    industry_profile: Dict[str, Any] | None = None,
+) -> str:
     stock_text = ", ".join(symbols)
     mode_text = "compare" if mode == "compare" else "analyze"
     focus_text = ", ".join(focus_labels[:3]) if focus_labels else "core stock factors"
+    if mode == "industry" and industry_profile:
+        return (
+            f"The engine will map the {industry_profile.get('label', 'industry')} ecosystem, "
+            f"shortlist listed candidates, and then analyze {stock_text} with the {agent.get('label', 'selected')} model."
+        )
     if horizon == "balanced":
-        return f"The engine will {mode_text} {stock_text} with a balanced lens, guided by the {agent.get('label', 'selected')} agent."
-    return f"The engine will {mode_text} {stock_text} with a {horizon} bias, while prioritizing {focus_text} through the {agent.get('label', 'selected')} lens."
+        return f"The engine will {mode_text} {stock_text} with a balanced lens, guided by the {agent.get('label', 'selected')} model."
+    return f"The engine will {mode_text} {stock_text} with a {horizon} bias, while prioritizing {focus_text} through the {agent.get('label', 'selected')} model."
 
 
 def interpret_user_request(query: str, thoughts: str = "", agent_preset: str = "auto") -> Dict[str, Any]:
     query = query.strip()
     thoughts = thoughts.strip()
     combined = "\n".join(part for part in [query, thoughts] if part).strip()
+    industry_profile = None
 
-    symbols = extract_symbols_from_text(query)
-    if not symbols and thoughts:
-        symbols = extract_symbols_from_text(thoughts)
-    if not symbols:
-        symbols = extract_symbols_from_text(combined)
+    matched_industry = industry_registry.resolve(combined)
+    if matched_industry and industry_registry.should_segment(combined):
+        industry_profile = matched_industry
+        symbols = matched_industry["shortlist_symbols"]
+    else:
+        symbols = extract_symbols_from_text(query)
+        if not symbols and thoughts:
+            symbols = extract_symbols_from_text(thoughts)
+        if not symbols:
+            symbols = extract_symbols_from_text(combined)
 
+    if not symbols and industry_profile:
+        raise ValueError(f"I recognized the {industry_profile['label']} request, but I do not have a candidate shortlist for it yet.")
     if not symbols:
         raise ValueError("I could not detect any stock symbols or company names from your request.")
     if len(symbols) > 3:
         raise ValueError("You can compare up to three stocks at a time.")
 
-    mode = "compare" if len(symbols) > 1 else "single"
+    mode = "industry" if industry_profile else "compare" if len(symbols) > 1 else "single"
     horizon = detect_time_horizon(combined)
     agent = agent_registry.resolve(query, thoughts, agent_preset)
+    if industry_profile and agent_preset == "auto":
+        sector_scout = agent_registry.by_id("sector_scout")
+        if sector_scout:
+            agent = {
+                **sector_scout,
+                "selection_mode": "auto",
+                "selection_reason": "Auto-selected Sector Scout because the prompt is asking for industry segmentation.",
+            }
     focus_areas = merge_focus_areas(detect_focus_areas(combined), agent.get("focus_areas", []))
     focus_labels = [FOCUS_LABELS[item] for item in focus_areas]
-    framework = build_framework(mode, horizon, focus_areas, agent)
+    framework = build_framework(mode, horizon, focus_areas, agent, industry_profile=industry_profile)
     notes_highlights = summarize_notes(thoughts)
 
     return {
@@ -315,11 +358,12 @@ def interpret_user_request(query: str, thoughts: str = "", agent_preset: str = "
         "raw_thoughts": thoughts,
         "symbols": symbols,
         "mode": mode,
-        "mode_label": "Comparison Run" if mode == "compare" else "Single-Stock Run",
+        "mode_label": "Industry Discovery" if mode == "industry" else "Comparison Run" if mode == "compare" else "Single-Stock Run",
         "time_horizon": horizon,
         "time_horizon_label": "Balanced" if horizon == "balanced" else horizon.title(),
         "focus_areas": focus_areas,
         "focus_labels": focus_labels,
+        "industry_profile": industry_profile,
         "agent": {
             "id": agent.get("id"),
             "label": agent.get("label"),
@@ -332,8 +376,12 @@ def interpret_user_request(query: str, thoughts: str = "", agent_preset: str = "
             "vibe_inspired_from": agent.get("vibe_inspired_from"),
         },
         "notes_highlights": notes_highlights,
-        "intent_summary": build_intent_summary(symbols, mode, horizon, focus_labels, agent),
-        "organized_prompt": f"{'Compare' if mode == 'compare' else 'Analyze'} {', '.join(symbols)} using the {agent.get('label', 'selected')} lens. Prioritize {', '.join(focus_labels[:4]).lower()} and clearly separate swing-trade quality from long-term investment quality.",
+        "intent_summary": build_intent_summary(symbols, mode, horizon, focus_labels, agent, industry_profile=industry_profile),
+        "organized_prompt": (
+            f"Map the {industry_profile.get('label', 'industry')} ecosystem, shortlist listed candidates, and analyze {', '.join(symbols)} using the {agent.get('label', 'selected')} model."
+            if industry_profile
+            else f"{'Compare' if mode == 'compare' else 'Analyze'} {', '.join(symbols)} using the {agent.get('label', 'selected')} model. Prioritize {', '.join(focus_labels[:4]).lower()} and clearly separate swing-trade quality from long-term investment quality."
+        ),
         "framework_steps": framework["steps"],
         "thinking_checklist": framework["checklist"],
     }

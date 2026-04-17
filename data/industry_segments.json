@@ -1,0 +1,118 @@
+{
+  "industries": [
+    {
+      "id": "nuclear",
+      "label": "Nuclear Industry",
+      "aliases": ["nuclear", "nuclear power", "nuclear energy", "nuclear industry", "nuclear sector"],
+      "description": "Maps the listed nuclear-power ecosystem rather than pretending there are many pure-play nuclear stocks. The shortlist focuses on utilities, EPC, heavy engineering, and civil-infra names tied to nuclear buildout.",
+      "segments": [
+        "Generation and utility operators",
+        "EPC and heavy engineering",
+        "Civil construction and project execution",
+        "Power transmission and support infrastructure"
+      ],
+      "candidates": [
+        {
+          "symbol": "LT.NS",
+          "company": "Larsen & Toubro",
+          "fit": "Large EPC and heavy-engineering player with exposure to complex industrial and power infrastructure projects."
+        },
+        {
+          "symbol": "BHEL.NS",
+          "company": "Bharat Heavy Electricals",
+          "fit": "Heavy power-equipment manufacturer that can benefit from large domestic power-capex cycles."
+        },
+        {
+          "symbol": "NTPC.NS",
+          "company": "NTPC",
+          "fit": "Large utility platform with balance-sheet scale and optionality around future nuclear-generation buildout."
+        },
+        {
+          "symbol": "HCC.NS",
+          "company": "Hindustan Construction Company",
+          "fit": "Civil-infrastructure contractor relevant to large and technically demanding project execution."
+        },
+        {
+          "symbol": "KEC.NS",
+          "company": "KEC International",
+          "fit": "Transmission and power-infrastructure angle that can support broader grid buildout around generation projects."
+        }
+      ]
+    },
+    {
+      "id": "defence",
+      "label": "Defence Industry",
+      "aliases": ["defence", "defense", "defence industry", "defense industry", "military"],
+      "description": "Focuses on India-listed defence and aerospace leaders across electronics, platforms, missiles, and manufacturing support.",
+      "segments": [
+        "Defence electronics",
+        "Aircraft and platforms",
+        "Missiles and ammunition",
+        "Manufacturing ecosystem"
+      ],
+      "candidates": [
+        { "symbol": "BEL.NS", "company": "Bharat Electronics", "fit": "Core defence-electronics and systems leader." },
+        { "symbol": "HAL.NS", "company": "Hindustan Aeronautics", "fit": "Aircraft and aerospace platform exposure." },
+        { "symbol": "BDL.NS", "company": "Bharat Dynamics", "fit": "Missile systems and strategic-defence exposure." },
+        { "symbol": "SOLARINDS.NS", "company": "Solar Industries India", "fit": "Ammunition and defence manufacturing optionality." },
+        { "symbol": "COCHINSHIP.NS", "company": "Cochin Shipyard", "fit": "Naval and shipbuilding exposure." }
+      ]
+    },
+    {
+      "id": "solar",
+      "label": "Solar Industry",
+      "aliases": ["solar", "solar energy", "solar industry", "renewable", "renewables", "clean energy"],
+      "description": "Maps solar and renewable candidates across utilities, EPC, module manufacturing, and green-power developers.",
+      "segments": [
+        "Utilities and generation",
+        "Solar EPC",
+        "Module and equipment manufacturing",
+        "Renewable developers"
+      ],
+      "candidates": [
+        { "symbol": "TATAPOWER.NS", "company": "Tata Power", "fit": "Integrated utility with renewable and solar execution exposure." },
+        { "symbol": "ADANIGREEN.NS", "company": "Adani Green Energy", "fit": "Large listed renewable developer." },
+        { "symbol": "NTPC.NS", "company": "NTPC", "fit": "Utility with renewable scale and capex optionality." },
+        { "symbol": "KPIGREEN.NS", "company": "KPI Green Energy", "fit": "Listed renewable developer with solar concentration." },
+        { "symbol": "INOXWIND.NS", "company": "Inox Wind", "fit": "Broader clean-energy equipment angle." }
+      ]
+    },
+    {
+      "id": "banking",
+      "label": "Banking Industry",
+      "aliases": ["banking", "banks", "bank", "private bank", "public sector bank"],
+      "description": "Maps major listed banking candidates across private lenders and PSU banks.",
+      "segments": [
+        "Private-sector banks",
+        "PSU banks",
+        "Retail lenders"
+      ],
+      "candidates": [
+        { "symbol": "HDFCBANK.NS", "company": "HDFC Bank", "fit": "Private-bank leader with broad retail and corporate franchise." },
+        { "symbol": "ICICIBANK.NS", "company": "ICICI Bank", "fit": "Large private lender with strong profitability profile." },
+        { "symbol": "SBIN.NS", "company": "State Bank of India", "fit": "Large PSU banking exposure and system-level franchise." },
+        { "symbol": "KOTAKBANK.NS", "company": "Kotak Mahindra Bank", "fit": "Conservative franchise with long-term quality appeal." },
+        { "symbol": "AXISBANK.NS", "company": "Axis Bank", "fit": "Large private bank with improving operating profile." }
+      ]
+    },
+    {
+      "id": "pharma",
+      "label": "Pharma Industry",
+      "aliases": ["pharma", "pharmaceuticals", "drug", "healthcare"],
+      "description": "Maps listed pharma leaders across generics, APIs, formulations, and specialty exposure.",
+      "segments": [
+        "Generics",
+        "APIs and ingredients",
+        "Formulations",
+        "Specialty pharma"
+      ],
+      "candidates": [
+        { "symbol": "SUNPHARMA.NS", "company": "Sun Pharma", "fit": "Large pharma leader with broad product mix." },
+        { "symbol": "DIVISLAB.NS", "company": "Divi's Laboratories", "fit": "API and manufacturing-quality exposure." },
+        { "symbol": "DRREDDY.NS", "company": "Dr. Reddy's Laboratories", "fit": "Generics and global pharma franchise." },
+        { "symbol": "CIPLA.NS", "company": "Cipla", "fit": "Formulations and respiratory franchise strength." },
+        { "symbol": "LUPIN.NS", "company": "Lupin", "fit": "Generics and specialty optionality." }
+      ]
+    }
+  ]
+}

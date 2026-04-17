@@ -1,0 +1,16 @@
+[Unit]
+Description=Gains FastAPI app
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/personal-ai-trader
+EnvironmentFile=/home/ubuntu/personal-ai-trader/.env
+Environment=PYTHONPATH=/home/ubuntu/personal-ai-trader
+ExecStart=/home/ubuntu/personal-ai-trader/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8008
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

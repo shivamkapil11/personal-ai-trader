@@ -7,321 +7,112 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
-    <div class="page-backdrop"></div>
     <div class="page-shell">
       <section id="auth-shell" class="screen auth-shell">
-        <div class="landing-page">
-          <header class="landing-nav">
+        <div class="auth-layout">
+          <div class="auth-intro">
             <div class="brand-lockup">
               <div class="brand-mark">G</div>
               <div>
-                <p class="eyebrow">Private Local Workspace</p>
+                <p class="eyebrow">Local Research Workspace</p>
                 <strong>Gains</strong>
               </div>
             </div>
-            <div class="nav-meta">
-              <span class="nav-pill">Source-attributed research</span>
-              <span class="nav-pill">Kite -> jugaad-data -> Yahoo</span>
-            </div>
-          </header>
 
-          <section class="landing-hero">
-            <div class="landing-copy">
-              <p class="eyebrow">Level Up Your Research</p>
-              <h1>Premium stock analysis with a cleaner path from idea to conviction.</h1>
+            <div class="auth-copy">
+              <p class="eyebrow">Minimal stock research</p>
+              <h1>Cleaner stock analysis, without the noise.</h1>
               <p class="hero-text">
-                Search any stock, compare ideas side by side, and see technicals, fundamentals, reasoning signals, and provider visibility in one local workspace.
+                Search a stock, compare a few ideas, and review technicals, fundamentals, risks, and source-backed reasoning in one simple workflow.
               </p>
-              <div class="hero-actions">
-                <button id="hero-login-button" class="primary-button">Continue with Google</button>
-                <a class="secondary-button button-link" href="#workflow-section">See how it works</a>
+            </div>
+
+            <div class="auth-points">
+              <div class="simple-card">
+                <span>Search</span>
+                <strong>Single stock or compare mode</strong>
               </div>
-              <div class="hero-micro-grid">
-                <div class="micro-card">
-                  <span>Data Intelligence</span>
-                  <strong>Live source visibility</strong>
-                  <p>Know exactly where quotes and context are coming from.</p>
-                </div>
-                <div class="micro-card">
-                  <span>Decision Support</span>
-                  <strong>Swing vs long-term lens</strong>
-                  <p>Separate timing, business quality, and conviction clearly.</p>
-                </div>
-                <div class="micro-card">
-                  <span>Portfolio Layer</span>
-                  <strong>Optional Kite sync</strong>
-                  <p>Upgrade into holdings, P&amp;L, and concentration insights later.</p>
-                </div>
+              <div class="simple-card">
+                <span>Data</span>
+                <strong>Kite -> jugaad-data -> Yahoo</strong>
+              </div>
+              <div class="simple-card">
+                <span>Portfolio</span>
+                <strong>Optional Kite sync</strong>
               </div>
             </div>
 
-            <div class="hero-preview-shell">
-              <div class="auth-card glass-card">
-                <div class="card-topline">
-                  <span class="eyebrow">Step 1</span>
-                  <span class="status-chip chip-green">Ready</span>
-                </div>
-                <h2>Continue with Google</h2>
-                <p class="muted">
-                  Minimal sign-in, persistent session, and then straight into whether you want portfolio-aware insights.
-                </p>
-                <button id="google-login-button" class="primary-button full-width">Sign in to Gains</button>
-                <p id="auth-helper" class="helper-text">
-                  {% if auth_state.firebase_enabled %}
-                  Firebase is configured for Google sign-in.
-                  {% else %}
-                  Firebase is not configured yet, so the app will use a safe local dev login until you add keys.
-                  {% endif %}
-                </p>
-                <div class="auth-metrics">
-                  <div class="metric-tile">
-                    <span>Knowledge</span>
-                    <strong>{{ knowledge_summary.count }} sources</strong>
-                  </div>
-                  <div class="metric-tile">
-                    <span>Workflow</span>
-                    <strong>Fast local setup</strong>
-                  </div>
-                </div>
-              </div>
+            <button id="hero-login-button" class="primary-button" type="button">Continue with Google</button>
+          </div>
 
-              <div class="preview-card glass-card">
-                <div class="preview-header">
-                  <div>
-                    <p class="eyebrow">Product Preview</p>
-                    <h3>Research OS</h3>
-                  </div>
-                  <span class="nav-pill">Live feed</span>
-                </div>
-                <div class="preview-grid">
-                  <div class="preview-panel highlight">
-                    <span class="preview-label">Conviction Engine</span>
-                    <strong>Scores + reasons + scenarios</strong>
-                  </div>
-                  <div class="preview-panel">
-                    <span class="preview-label">Portfolio Layer</span>
-                    <strong>Allocation, risk, exposure</strong>
-                  </div>
-                  <div class="preview-panel">
-                    <span class="preview-label">Prompt Intelligence</span>
-                    <strong>Turns rough notes into structure</strong>
-                  </div>
-                  <div class="preview-panel">
-                    <span class="preview-label">Quote Source</span>
-                    <strong>Transparent provider chain</strong>
-                  </div>
-                </div>
+          <div class="auth-panel glass-card">
+            <p class="eyebrow">Sign in</p>
+            <h2>Start with your Google account</h2>
+            <p class="muted">
+              Keep the session persistent, then choose whether you want broker-connected portfolio context.
+            </p>
+            <button id="google-login-button" class="primary-button full-width" type="button">Continue with Google</button>
+            <p id="auth-helper" class="helper-text">
+              {% if auth_state.firebase_enabled %}
+              Firebase is configured for Google sign-in.
+              {% else %}
+              Firebase is not configured yet, so the app will use a safe local dev login until you add keys.
+              {% endif %}
+            </p>
+            <div class="auth-meta-grid">
+              <div class="meta-stat">
+                <span>Knowledge</span>
+                <strong>{{ knowledge_summary.count }} sources</strong>
+              </div>
+              <div class="meta-stat">
+                <span>Mode</span>
+                <strong>Local-first</strong>
               </div>
             </div>
-          </section>
-
-          <section class="trust-strip">
-            <div class="trust-card">
-              <span>Private by default</span>
-              <strong>Runs locally on your machine</strong>
-            </div>
-            <div class="trust-card">
-              <span>Decision quality</span>
-              <strong>Technicals, fundamentals, and business context</strong>
-            </div>
-            <div class="trust-card">
-              <span>Personalization</span>
-              <strong>Optional Kite insights when you want them</strong>
-            </div>
-          </section>
-
-          <section id="workflow-section" class="marketing-section">
-            <div class="section-heading">
-              <p class="eyebrow">Workflow</p>
-              <h2>From login to action in three clean moves.</h2>
-              <p class="muted">A premium flow should feel fast, clear, and trustworthy. The product stays useful even before portfolio connectivity is added.</p>
-            </div>
-            <div class="workflow-grid">
-              <article class="workflow-step glass-card">
-                <span class="step-index">01</span>
-                <h3>Google login</h3>
-                <p>Start with a minimal sign-in and keep the session persistent so you can return to the same dashboard state.</p>
-              </article>
-              <article class="workflow-step glass-card">
-                <span class="step-index">02</span>
-                <h3>Kite or no Kite</h3>
-                <p>Choose whether you want portfolio-aware analysis. No broker connection is required to use the product well.</p>
-              </article>
-              <article class="workflow-step glass-card">
-                <span class="step-index">03</span>
-                <h3>Analyze and compare</h3>
-                <p>Search single stocks, compare up to three names, and review the reasoning engine with a visible progress feed.</p>
-              </article>
-            </div>
-          </section>
-
-          <section class="marketing-section">
-            <div class="section-heading">
-              <p class="eyebrow">Features</p>
-              <h2>Built like a research cockpit, not a cluttered terminal.</h2>
-            </div>
-            <div class="feature-grid">
-              <article class="feature-card glass-card">
-                <span class="feature-tag">Market Data Intelligence</span>
-                <h3>Provider-aware quotes</h3>
-                <p>See live source visibility, fallback behavior, and cleaner symbol normalization without losing the current provider chain.</p>
-              </article>
-              <article class="feature-card glass-card">
-                <span class="feature-tag">Stock Analysis</span>
-                <h3>Swing vs long-term clarity</h3>
-                <p>Technical setup, valuation context, business quality, and risk are organized for fast decision-making.</p>
-              </article>
-              <article class="feature-card glass-card">
-                <span class="feature-tag">Portfolio Insights</span>
-                <h3>Optional, not mandatory</h3>
-                <p>Connect when you want holdings, concentration, sector allocation, and personalized monitoring.</p>
-              </article>
-              <article class="feature-card glass-card">
-                <span class="feature-tag">Reasoning Engine</span>
-                <h3>Framework-backed outputs</h3>
-                <p>Source-tagged thinking layers reference your books, playbooks, and future knowledge inputs.</p>
-              </article>
-            </div>
-          </section>
-
-          <section class="marketing-section">
-            <div class="section-heading">
-              <p class="eyebrow">Credibility</p>
-              <h2>Signals that make the product feel trustworthy.</h2>
-            </div>
-            <div class="credibility-grid">
-              <div class="credibility-card glass-card">
-                <span>Source visible</span>
-                <strong>Every major market read can carry provider context.</strong>
-              </div>
-              <div class="credibility-card glass-card">
-                <span>Local-first</span>
-                <strong>Designed for private workflows before cloud complexity.</strong>
-              </div>
-              <div class="credibility-card glass-card">
-                <span>Extensible</span>
-                <strong>Portfolio, knowledge, settings, and watchlists are already staged.</strong>
-              </div>
-            </div>
-          </section>
-
-          <section class="marketing-section faq-section">
-            <div class="section-heading">
-              <p class="eyebrow">FAQ</p>
-              <h2>Common questions before you start.</h2>
-            </div>
-            <div class="faq-list">
-              <details class="faq-item glass-card">
-                <summary>Do I need Kite to use Gains?</summary>
-                <p>No. Kite is optional and only enhances portfolio-aware insights. Core stock analysis still works without it.</p>
-              </details>
-              <details class="faq-item glass-card">
-                <summary>Is the app usable before full Firebase and Postgres setup?</summary>
-                <p>Yes. The current flow supports local sessions and local storage fallback until those integrations are added.</p>
-              </details>
-              <details class="faq-item glass-card">
-                <summary>What makes this feel different from a generic screener?</summary>
-                <p>The product is optimized around decision framing, comparison, source visibility, and reasoning-backed outputs instead of raw data dumps.</p>
-              </details>
-            </div>
-          </section>
-
-          <footer class="landing-footer">
-            <div>
-              <strong>Gains</strong>
-              <p class="muted">Local-first AI stock research and decision support.</p>
-            </div>
-            <div class="footer-links">
-              <span>Analysis</span>
-              <span>Portfolio</span>
-              <span>Reasoning Engine</span>
-              <span>Watchlists</span>
-            </div>
-          </footer>
+          </div>
         </div>
       </section>
 
       <section id="onboarding-shell" class="screen flow-shell hidden">
-        <div class="flow-layout">
-          <div class="flow-stage glass-card">
-            <div class="flow-progress">
-              <span class="eyebrow">Step 2 of 3</span>
-              <div class="progress-track compact-progress">
-                <span style="width: 66%"></span>
-              </div>
-            </div>
-            <h2>Are you a Kite user?</h2>
-            <p class="muted">
-              Choose your path. You can always skip now and connect later from the dashboard when you want more personalized portfolio insights.
-            </p>
-            <div class="onboarding-options">
-              <button id="kite-yes-button" class="choice-card choice-positive" type="button">
-                <span class="choice-kicker">Yes</span>
-                <strong>Connect Kite</strong>
-                <p>Unlock holdings, positions, concentration risk, and portfolio-level monitoring.</p>
-              </button>
-              <button id="kite-no-button" class="choice-card" type="button">
-                <span class="choice-kicker">No</span>
-                <strong>Continue without Kite</strong>
-                <p>Use stock search, comparison, technicals, fundamentals, and reasoning without any broker connection.</p>
-              </button>
-            </div>
-          </div>
-          <div class="flow-sidepanel glass-card">
-            <p class="eyebrow">Why connect later?</p>
-            <h3>Keep onboarding light, then personalize when it matters.</h3>
-            <ul class="feature-list">
-              <li>Portfolio insights stay optional, not mandatory.</li>
-              <li>Your stock research workflow works immediately either way.</li>
-              <li>When you are ready, connect from the dashboard with one clear action.</li>
-            </ul>
+        <div class="flow-card glass-card">
+          <p class="eyebrow">Setup</p>
+          <h2>Are you a Kite user?</h2>
+          <p class="muted">
+            You can skip this and use the full stock-research workflow immediately. Connect later only if you want portfolio-level insights.
+          </p>
+          <div class="onboarding-options">
+            <button id="kite-yes-button" class="choice-card choice-positive" type="button">
+              <span class="choice-kicker">Yes</span>
+              <strong>Connect Kite</strong>
+              <p>Holdings, positions, concentration, and portfolio monitoring.</p>
+            </button>
+            <button id="kite-no-button" class="choice-card" type="button">
+              <span class="choice-kicker">No</span>
+              <strong>Continue without Kite</strong>
+              <p>Stock analysis only, no broker connection required.</p>
+            </button>
           </div>
         </div>
       </section>
 
       <section id="kite-shell" class="screen flow-shell hidden">
-        <div class="flow-layout">
-          <div class="flow-stage glass-card">
-            <div class="flow-progress">
-              <span class="eyebrow">Step 3 of 3</span>
-              <div class="progress-track compact-progress">
-                <span style="width: 100%"></span>
-              </div>
-            </div>
-            <h2>Connect Kite</h2>
-            <p class="muted">
-              Keep Zerodha login intact and use it only when you want portfolio-aware insights. This path is read-only and meant to improve personalization, not execution.
-            </p>
-            <div id="kite-status-card" class="status-board"></div>
-            <div class="flow-actions">
-              <button id="kite-connect-button" class="primary-button" type="button">Connect and sync</button>
-              <button id="kite-refresh-button" class="secondary-button" type="button">Refresh status</button>
-              <button id="kite-skip-button" class="secondary-button" type="button">Skip for now</button>
-            </div>
-          </div>
-          <div class="flow-sidepanel glass-card">
-            <p class="eyebrow">Portfolio Value</p>
-            <h3>What changes once Kite is connected?</h3>
-            <div class="value-grid">
-              <div class="value-card">
-                <span>Holdings + Positions</span>
-                <strong>Live portfolio context</strong>
-              </div>
-              <div class="value-card">
-                <span>Risk Layers</span>
-                <strong>Allocation, concentration, and conviction overlays</strong>
-              </div>
-              <div class="value-card">
-                <span>Better Monitoring</span>
-                <strong>Know what deserves attention first</strong>
-              </div>
-            </div>
+        <div class="flow-card glass-card">
+          <p class="eyebrow">Kite connection</p>
+          <h2>Connect your portfolio</h2>
+          <p class="muted">
+            This connection is read-only and only used to personalize holdings, P&amp;L, and portfolio risk insights.
+          </p>
+          <div id="kite-status-card" class="status-board"></div>
+          <div class="flow-actions">
+            <button id="kite-connect-button" class="primary-button" type="button">Connect Kite</button>
+            <button id="kite-refresh-button" class="secondary-button" type="button">Refresh status</button>
+            <button id="kite-skip-button" class="secondary-button" type="button">Skip for now</button>
           </div>
         </div>
       </section>
@@ -329,9 +120,9 @@
       <section id="transition-shell" class="screen flow-shell hidden">
         <div class="transition-card glass-card">
           <div class="loader-ring"></div>
-          <p class="eyebrow">Preparing Dashboard</p>
-          <h2>We’re getting your dashboard ready...</h2>
-          <p id="transition-helper" class="muted">Setting up the workspace, confirming provider status, and syncing portfolio context if available.</p>
+          <p class="eyebrow">Loading</p>
+          <h2>Preparing your dashboard</h2>
+          <p id="transition-helper" class="muted">Setting up market data, session state, and portfolio context if available.</p>
         </div>
       </section>
 
@@ -342,14 +133,15 @@
               <div class="brand-mark">G</div>
               <div>
                 <p class="eyebrow">Research Workspace</p>
-                <strong>Gains Dashboard</strong>
+                <strong>Gains</strong>
               </div>
             </div>
             <div id="provider-visibility" class="provider-visibility"></div>
           </div>
 
           <div class="topbar-right">
-            <button id="dashboard-connect-kite-button" class="secondary-button topbar-button" type="button">Connect Portfolio</button>
+            <button id="dashboard-connect-kite-button" class="secondary-button small-button" type="button">Connect portfolio</button>
+            <span id="dashboard-session-pill" class="status-chip chip-green">Session live</span>
             <div class="profile-menu-wrap">
               <button id="profile-menu-button" class="profile-trigger" type="button" aria-expanded="false">
                 <div id="user-avatar" class="avatar-badge">G</div>
@@ -368,160 +160,37 @@
           </div>
         </header>
 
-        <section class="dashboard-hero">
-          <div class="hero-primary glass-card">
-            <div class="card-topline">
-              <span class="eyebrow">Command Center</span>
-              <span id="dashboard-session-pill" class="status-chip chip-green">Session live</span>
-            </div>
-            <h1>Research faster, compare cleaner, and keep the signal up front.</h1>
+        <section class="dashboard-overview glass-card">
+          <div>
+            <p class="eyebrow">Overview</p>
+            <h1>Research stocks with a simpler workspace.</h1>
             <p id="dashboard-source-note" class="hero-text">
               Provider visibility, stock intelligence, and portfolio context stay in one clean workflow.
             </p>
-            <div class="hero-stats">
-              <div class="hero-stat">
-                <span>Provider Chain</span>
-                <strong>{{ market_data_order_label }}</strong>
-              </div>
-              <div class="hero-stat">
-                <span>Kite Status</span>
-                <strong id="hero-kite-status">{{ market_data_status.providers[0].label if market_data_status.providers[0].available else 'Pending setup' }}</strong>
-              </div>
-              <div class="hero-stat">
-                <span>Knowledge Sources</span>
-                <strong>{{ knowledge_summary.count }}</strong>
-              </div>
+          </div>
+          <div class="overview-stats">
+            <div class="hero-stat">
+              <span>Provider Chain</span>
+              <strong>{{ market_data_order_label }}</strong>
+            </div>
+            <div class="hero-stat">
+              <span>Kite Status</span>
+              <strong id="hero-kite-status">{{ market_data_status.providers[0].label if market_data_status.providers[0].available else 'Pending setup' }}</strong>
+            </div>
+            <div class="hero-stat">
+              <span>Knowledge Sources</span>
+              <strong>{{ knowledge_summary.count }}</strong>
             </div>
           </div>
-
-          <div class="hero-secondary glass-card">
-            <p class="eyebrow">Workspace Focus</p>
-            <h3>What this dashboard is optimized for</h3>
-            <div class="level-rail">
-              <div class="level-node active">Search</div>
-              <div class="level-node active">Compare</div>
-              <div class="level-node">Monitor</div>
-            </div>
-            <div class="mini-dashboard-grid">
-              <div class="mini-dashboard-card">
-                <span>Analysis</span>
-                <strong>Single + compare mode</strong>
-              </div>
-              <div class="mini-dashboard-card">
-                <span>Portfolio</span>
-                <strong>Optional personalization</strong>
-              </div>
-              <div class="mini-dashboard-card">
-                <span>Reasoning</span>
-                <strong>Books + source tags</strong>
-              </div>
-              <div class="mini-dashboard-card">
-                  <span>Flow</span>
-                  <strong>Search, compare, then monitor</strong>
-                </div>
-              </div>
-            </div>
         </section>
 
         <main class="workspace-grid">
-          <section class="workspace-main">
-            <div class="control-panel glass-card">
-              <div class="section-title">
-                <div>
-                  <p class="eyebrow">Search Engine</p>
-                  <h2>Start with a stock, compare set, or rough thought.</h2>
-                </div>
-                <span class="status-chip chip-yellow">Prompt-aware</span>
-              </div>
-
-              <form id="analysis-form" class="query-form">
-                <label class="field">
-                  <span>Research request or stock symbols</span>
-                  <textarea
-                    id="query"
-                    name="query"
-                    rows="4"
-                    placeholder="Compare Powergrid, NTPC and Adani Energy Solutions for dividend safety, valuation comfort, and swing setup quality."
-                  ></textarea>
-                </label>
-
-                <label class="field">
-                  <span>Your thoughts, angle, or checklist</span>
-                  <textarea
-                    id="thoughts"
-                    name="thoughts"
-                    rows="4"
-                    placeholder="I want to know which one is better for 6-12 months, which one is safer on downside, and whether any of them is a clean swing trade right now."
-                  ></textarea>
-                </label>
-
-                <div class="form-toolbar">
-                  <label class="field compact">
-                    <span>Research agent</span>
-                    <select id="agent-preset" name="agent_preset">
-                      {% for preset in agent_summary.selectable %}
-                      <option value="{{ preset.id }}">{{ preset.label }}</option>
-                      {% endfor %}
-                    </select>
-                  </label>
-
-                  <label class="field compact">
-                    <span>Chart interval</span>
-                    <select id="chart-interval" name="chart_interval">
-                      <option value="D">Daily</option>
-                      <option value="W">Weekly</option>
-                      <option value="60">1 Hour</option>
-                      <option value="240">4 Hour</option>
-                      <option value="15">15 Min</option>
-                    </select>
-                  </label>
-
-                  <label class="toggle-field">
-                    <input id="include-snapshot" type="checkbox" checked />
-                    <span>Try TradingView snapshot</span>
-                  </label>
-                </div>
-
-                <div id="agent-helper" class="agent-helper muted">
-                  Auto Select will choose the best local research agent based on your wording.
-                </div>
-
-                <div class="preset-row">
-                  <button type="button" class="preset" data-query="POWERGRID" data-thoughts="Tell me whether this is better suited as a swing trade right now or a long-term hold.">POWERGRID</button>
-                  <button type="button" class="preset" data-query="Compare NTPC and POWERGRID" data-thoughts="Focus on dividend yield, downside risk, and which one fits a steadier long-term portfolio better.">NTPC vs POWERGRID</button>
-                  <button type="button" class="preset" data-query="Compare RELIANCE, TCS and INFY" data-thoughts="Rank them for business quality, valuation comfort, and whether any one of them has the strongest 1-3 year setup.">Reliance vs TCS vs INFY</button>
-                  <button type="button" class="preset" data-query="Compare AAPL, MSFT and NVDA" data-thoughts="Show me the best long-term compounder, the best swing setup, and the biggest valuation risk.">AAPL vs MSFT vs NVDA</button>
-                </div>
-
-                <div class="action-row">
-                  <button type="submit" class="primary-button">Run Research</button>
-                  <button id="add-watchlist-button" type="button" class="secondary-button">Add first symbol to watchlist</button>
-                </div>
-              </form>
-            </div>
-
-            <section class="insight-band">
-              <div class="band-card glass-card">
-                <p class="eyebrow">Local Agents</p>
-                <div id="agent-panel" class="band-copy">{{ agent_summary.count }} research agents are available for different stock-analysis workflows.</div>
-              </div>
-              <div class="band-card glass-card">
-                <p class="eyebrow">Live Source Visibility</p>
-                <div id="market-data-panel" class="band-copy">The current provider chain and fallback behavior will appear here.</div>
-              </div>
-              <div class="band-card glass-card">
-                <p class="eyebrow">Run Timing</p>
-                <div class="band-copy">Single-stock runs usually finish faster. Multi-stock compares with TradingView snapshots can take longer, so the feed shows a live estimate before each run.</div>
-              </div>
-            </section>
-          </section>
-
           <aside class="dashboard-sidebar">
             <div class="panel-card glass-card">
               <div class="section-title">
                 <div>
                   <p class="eyebrow">Portfolio</p>
-                  <h3>Portfolio sync</h3>
+                  <h3>Connected insights</h3>
                 </div>
                 <button id="side-connect-kite-button" class="secondary-button small-button" type="button">Connect</button>
               </div>
@@ -542,7 +211,7 @@
               <div class="section-title">
                 <div>
                   <p class="eyebrow">Knowledge</p>
-                  <h3>Reasoning registry</h3>
+                  <h3>Reasoning sources</h3>
                 </div>
               </div>
               <div id="knowledge-panel" class="module-body muted">{{ knowledge_summary.count }} registered reasoning sources.</div>
@@ -552,7 +221,7 @@
               <div class="section-title">
                 <div>
                   <p class="eyebrow">Infrastructure</p>
-                  <h3>Current readiness</h3>
+                  <h3>Readiness</h3>
                 </div>
               </div>
               <div id="infrastructure-panel" class="module-body muted">
@@ -561,45 +230,136 @@
               </div>
             </div>
           </aside>
-        </main>
 
-        <section class="results-shell">
-          <aside class="progress-panel glass-card">
-            <div class="panel-head">
-              <div>
-                <p class="eyebrow">Research Feed</p>
-                <h2>What the engine is doing</h2>
+          <section class="workspace-main">
+            <div class="control-panel glass-card">
+              <div class="section-title">
+                <div>
+                  <p class="eyebrow">Research</p>
+                  <h2>Search a stock or compare a few names.</h2>
+                </div>
               </div>
-              <div id="progress-pill" class="status-chip chip-yellow">Idle</div>
-            </div>
-            <div class="progress-meter">
-              <div id="progress-bar" class="progress-bar"></div>
-            </div>
-            <div class="progress-stage-copy">
-              <strong id="loading-message">Waiting to start...</strong>
-              <span id="progress-estimate">Signals update as the run advances.</span>
-            </div>
-            <ul id="progress-log" class="progress-log"></ul>
-          </aside>
 
-          <section class="result-column">
-            <div id="result-toolbar" class="result-toolbar glass-card hidden">
-              <button id="result-home-button" class="secondary-button small-button" type="button">Home</button>
-              <form id="result-search-form" class="result-search-form">
-                <input id="result-search-input" type="text" placeholder="Search another stock or compare set" />
-                <button class="primary-button small-button" type="submit">Search</button>
+              <form id="analysis-form" class="query-form">
+                <label class="field">
+                  <span>Stock or research prompt</span>
+                  <textarea
+                    id="query"
+                    name="query"
+                    rows="3"
+                    placeholder="Compare POWERGRID, NTPC and Adani Energy Solutions for valuation, risk, and swing setup."
+                  ></textarea>
+                </label>
+
+                <label class="field">
+                  <span>Your notes</span>
+                  <textarea
+                    id="thoughts"
+                    name="thoughts"
+                    rows="3"
+                    placeholder="Focus on downside safety, 6-12 month return potential, and whether any of them is a clean swing trade."
+                  ></textarea>
+                </label>
+
+                <div class="form-toolbar">
+                  <label class="field compact">
+                    <span>Research model</span>
+                    <select id="agent-preset" name="agent_preset">
+                      {% for preset in agent_summary.selectable %}
+                      <option value="{{ preset.id }}">{{ preset.label }}</option>
+                      {% endfor %}
+                    </select>
+                  </label>
+
+                  <label class="field compact">
+                    <span>Chart interval</span>
+                    <select id="chart-interval" name="chart_interval">
+                      <option value="D">Daily</option>
+                      <option value="W">Weekly</option>
+                      <option value="60">1 Hour</option>
+                      <option value="240">4 Hour</option>
+                      <option value="15">15 Min</option>
+                    </select>
+                  </label>
+
+                  <label class="toggle-field">
+                    <input id="include-snapshot" type="checkbox" checked />
+                    <span>TradingView snapshot</span>
+                  </label>
+                </div>
+
+                <div id="agent-helper" class="agent-helper muted">
+                  Auto Select will choose the best local research model based on your wording.
+                </div>
+
+                <div class="preset-row">
+                  <button type="button" class="preset" data-query="POWERGRID" data-thoughts="Tell me whether this is better suited as a swing trade right now or a long-term hold.">POWERGRID</button>
+                  <button type="button" class="preset" data-query="Compare NTPC and POWERGRID" data-thoughts="Focus on dividend yield, downside risk, and which one fits a steadier long-term portfolio better.">NTPC vs POWERGRID</button>
+                  <button type="button" class="preset" data-query="Compare RELIANCE, TCS and INFY" data-thoughts="Rank them for business quality, valuation comfort, and whether any one of them has the strongest 1-3 year setup.">Reliance vs TCS vs INFY</button>
+                  <button type="button" class="preset" data-query="Compare AAPL, MSFT and NVDA" data-thoughts="Show me the best long-term compounder, the best swing setup, and the biggest valuation risk.">AAPL vs MSFT vs NVDA</button>
+                </div>
+
+                <div class="action-row">
+                  <button type="submit" class="primary-button">Run research</button>
+                  <button id="add-watchlist-button" type="button" class="secondary-button">Add first symbol to watchlist</button>
+                </div>
               </form>
             </div>
 
-            <section id="result-board" class="result-board empty-state">
-            <div class="empty-card glass-card">
-              <p class="eyebrow">Ready</p>
-              <h2>No research package yet</h2>
-              <p>Run a ticker or compare set and the dashboard will fill with scores, charts, technicals, fundamentals, risk notes, and decision tags.</p>
-            </div>
+            <section class="insight-band">
+              <div class="band-card glass-card">
+                <p class="eyebrow">Research Models</p>
+                <div id="agent-panel" class="band-copy">{{ agent_summary.count }} research models are available for different stock-analysis workflows.</div>
+              </div>
+              <div class="band-card glass-card">
+                <p class="eyebrow">Market Data</p>
+                <div id="market-data-panel" class="band-copy">The current provider chain and fallback behavior will appear here.</div>
+              </div>
+              <div class="band-card glass-card">
+                <p class="eyebrow">Timing</p>
+                <div class="band-copy">Estimated run time appears before each analysis based on symbols, snapshots, and live data availability.</div>
+              </div>
+            </section>
+
+            <section class="results-shell">
+              <aside class="progress-panel glass-card">
+                <div class="panel-head">
+                  <div>
+                    <p class="eyebrow">Research Feed</p>
+                    <h2>What the engine is doing</h2>
+                  </div>
+                  <div id="progress-pill" class="status-chip chip-yellow">Idle</div>
+                </div>
+                <div class="progress-meter">
+                  <div id="progress-bar" class="progress-bar"></div>
+                </div>
+                <div class="progress-stage-copy">
+                  <strong id="loading-message">Waiting to start...</strong>
+                  <span id="progress-estimate">Signals update as the run advances.</span>
+                </div>
+                <ul id="progress-log" class="progress-log"></ul>
+              </aside>
+
+              <section class="result-column">
+                <div id="result-toolbar" class="result-toolbar glass-card hidden">
+                  <button id="result-home-button" class="secondary-button small-button" type="button">Home</button>
+                  <form id="result-search-form" class="result-search-form">
+                    <input id="result-search-input" type="text" placeholder="Search another stock or compare set" />
+                    <button class="primary-button small-button" type="submit">Search</button>
+                  </form>
+                </div>
+
+                <section id="result-board" class="result-board empty-state">
+                  <div class="empty-card glass-card">
+                    <p class="eyebrow">Ready</p>
+                    <h2>No research package yet</h2>
+                    <p>Run a ticker or compare set and the dashboard will fill with technicals, fundamentals, risks, and decision tags.</p>
+                  </div>
+                </section>
+              </section>
             </section>
           </section>
-        </section>
+        </main>
       </section>
     </div>
 
@@ -625,7 +385,7 @@
     <div id="loading-screen" class="loading-screen hidden">
       <div class="loading-card glass-card">
         <div class="loader-ring"></div>
-        <p class="eyebrow">Live Run</p>
+        <p class="eyebrow">Research run</p>
         <h2>Building your stock dashboard</h2>
         <p id="loading-overlay-message">Waiting to start...</p>
         <p id="loading-estimate" class="muted loading-estimate"></p>
